@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
-import struct
 
 def get_images(filename):
-    
     with open(filename, 'rb') as file:
         magic_bytes = file.read(4)
         number_of_images = int.from_bytes(file.read(4))
@@ -18,8 +16,6 @@ def get_labels(filename):
         magic_bytes = file.read(4)
         number_of_labels = int.from_bytes(file.read(4))
         return [int.from_bytes(file.read(1)) for _ in range(number_of_labels)]
-
-
 
 if __name__ == "__main__":
     images = get_images("./dataset/t10k-images.idx3-ubyte")
