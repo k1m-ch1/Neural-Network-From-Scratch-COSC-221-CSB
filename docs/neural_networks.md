@@ -664,7 +664,7 @@ Actually, let's write everything in its full form and then reduce it.
 So before we abstract everything away using the $\delta^{[l]}$ variable, let's lay it out bare. To adjust the biases using the chain rule:
 
 $$
-\frac{\partial \mathcal{L}}{\partial b^{[l]}} = \frac{\partial z^{[l]}}{\partial b^{[l]}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+\frac{\partial \mathcal{L}}{\partial b^{[l]}} = \left(\frac{\partial z^{[l]}}{\partial b^{[l]}}\right)^T \frac{\partial \mathcal{L}}{\partial z^{[l]}}
 $$
 
 But we know that:
@@ -684,3 +684,124 @@ Ok now, we need to do it for $\frac{\partial \mathcal{L}}{\partial W^{[l]}}$
 Alright, this is a rank 3 tensor, so we have to be careful.
 
 We've already broken
+
+Ok to deal with the weirdness of $\frac{\partial \mathcal{L}}{\partial W^{[L]}}$, we need to break it down. What we did earlier was:
+
+
+\begin{align*}
+\frac{\partial \mathcal{L}}{\partial b^{[l]}} & = \left(\frac{\partial z^{[l]}}{\partial b^{[l]}}\right)^T \frac{\partial \mathcal{L}}{\partial z^{[l]}}\\
+&= \begin{bmatrix}
+&\frac{\partial z^{[l]}}{\partial b^{[l]}_1} \cdot \frac{\partial \mathcal{L}}{\partial z^{[l]}}\\
+&\frac{\partial z^{[l]}}{\partial b^{[l]}_2} \cdot \frac{\partial \mathcal{L}}{\partial z^{[l]}}\\
+&\vdots\\
+&\frac{\partial z^{[l]}}{\partial b^{[l]}_n} \cdot \frac{\partial \mathcal{L}}{\partial z^{[l]}}\\
+\end{bmatrix}
+\end{align*}
+
+So we can now extend this to rank 3 matrices, meaning:
+
+\begin{align*}
+\frac{\partial \mathcal{L}}{\partial W^{[l]}} & = \left(\frac{\partial z^{[l]}}{\partial W^{[l]}}\right)^T\frac{\partial \mathcal{L}}{\partial z^{[l]}}\\
+& = \begin{bmatrix}
+&\frac{\partial z^{[l]}}{\partial W_{11}}&\frac{\partial z^{[l]}}{\partial W_{12}}&\cdots&\frac{\partial z^{[l]}}{\partial W_{1n^{[l - 1]}}}\\
+&\frac{\partial z^{[l]}}{\partial W_{21}}&\frac{\partial z^{[l]}}{\partial W_{22}}&\cdots&\frac{\partial z^{[l]}}{\partial W_{2n^{[l - 1]}}}\\
+&\vdots&\vdots&\ddots&\vdots\\
+&\frac{\partial z^{[l]}}{\partial W_{n^{[l]}1}}&\frac{\partial z^{[l]}}{\partial W_{n^{[l]}2}}&\cdots&\frac{\partial z^{[l]}}{\partial W_{n^{[l]}n^{[l - 1]}}}\\
+\end{bmatrix} \cdot \frac{\partial \mathcal{L}}{\partial z^{[l]}}\\
+& = \begin{bmatrix}
+&\frac{\partial z^{[l]}}{\partial W_{11}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}&\frac{\partial z^{[l]}}{\partial W_{12}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}&\cdots&\frac{\partial z^{[l]}}{\partial W_{1n^{[l - 1]}}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}\\
+&\frac{\partial z^{[l]}}{\partial W_{21}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}&\frac{\partial z^{[l]}}{\partial W_{22}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}&\cdots&\frac{\partial z^{[l]}}{\partial W_{2n^{[l - 1]}}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}\\
+&\vdots&\vdots&\ddots&\vdots\\
+&\frac{\partial z^{[l]}}{\partial W_{n^{[l]}1}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}&\frac{\partial z^{[l]}}{\partial W_{n^{[l]}2}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}&\cdots&\frac{\partial z^{[l]}}{\partial W_{n^{[l]}n^{[l - 1]}}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}\\
+\end{bmatrix} 
+\end{align*}
+
+Ok this looks huge and complicated, but we've already seen these vectors are filled with mostly 0.
+
+Recall that if we're just taking the weights as matrices and multiplying it to the input, here's what we'll have:
+
+$$
+\frac{\partial z^{[l]}}{\partial W^{[l]}_{ij}} = \begin{bmatrix}
+&0\\
+&0\\
+&\vdots\\
+&a_j^{[l]} \quad (\text{ at row } i)\\
+&\vdots\\
+&0\\
+\end{bmatrix}
+$$ (or like, transpose it or sth... This is quite a mess, but we just want to do the dot product, so, maybe transposing a rank 3 tensor requires that you transpose all children of it too or something...)
+
+This means that we can probably simply this matrix a bit further. Also, this only works for the Multi-Layered Perceptron (which is what we're doing right now). For CNN and other more complicated stuff, it might not work as nicely.
+
+\begin{align*}
+\frac{\partial \mathcal{L}}{\partial W^{[l]}} & = 
+\begin{bmatrix}
+&a_1 \frac{\partial \mathcal{L}}{\partial z_1^{[l]}}& a_2 \frac{\partial \mathcal{L}}{\partial z_1^{[l]}}&\cdots&a_{n^{[l - 1]}}\frac{\partial \mathcal{L}}{\partial z_1^{[l]}}\\
+&a_1 \frac{\partial \mathcal{L}}{\partial z_2^{[l]}}& a_2 \frac{\partial \mathcal{L}}{\partial z_2^{[l]}}&\cdots&a_{n^{[l - 1]}}\frac{\partial \mathcal{L}}{\partial z_2^{[l]}}\\
+&\vdots&\vdots&\ddots&\vdots\\
+&a_1 \frac{\partial \mathcal{L}}{\partial z_{n^{[l]}}^{[l]}}& a_2 \frac{\partial \mathcal{L}}{\partial z_{n^{[l]}}^{[l]}}&\cdots&a_{n^{[l - 1]}}\frac{\partial \mathcal{L}}{\partial z_{n^{[l]}}^{[l]}}\\
+\end{bmatrix}
+\end{align*}
+
+Notice that in this case:
+
+$$
+\frac{\partial \mathcal{L}}{\partial W^{[l]}} = a^{[l]} \otimes \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+$$
+
+Ok so that simplifies quite nicely...
+
+The next step few steps are needed to connect $\frac{\partial \mathcal{L}}{\partial a^{[l - 1]}}$ to $\frac{\partial \mathcal{L}}{\partial z^{[l]}}$.
+
+Now, we first need to compute:
+
+$$
+\frac{\partial \mathcal{L}}{\partial a^{[l - 1]}}
+$$
+
+So we use the chain rule again:
+
+$$
+\frac{\partial \mathcal{L}}{\partial a^{[l - 1]}} = \left(\frac{\partial z^{[l]}}{\partial a^{[l - 1]}}\right)^T \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+$$
+
+But we've already shown that (in the case of MLP):
+
+$$
+\frac{\partial z^{[l]}}{\partial a^{[l - 1]}} = W^{[l]}
+$$
+
+As such, quite simply:
+
+$$
+\frac{\partial \mathcal{L}}{\partial a^{[l - 1]}} = \left(W^{[l]}\right)^T \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+$$
+
+Finally, we need to compute:
+
+$$
+\frac{\partial a^{[l]}}{\partial z^{[l]}}
+$$
+
+We've already derived earlier that:
+
+$$
+\frac{\partial a^{[l]}}{\partial z^{[l]}} = \begin{bmatrix}
+&u(z_1^{[l]})&0&\cdots&0\\
+&0&u(z_2^{[l]})&\cdots&0\\
+&\vdots&\vdots&\ddots&\vdots\\
+&0&0&\cdots&u(z_{n^{[l]}}^{[l]})\\
+\end{bmatrix}
+$$
+
+And it's diagonal too. So we basically turn this into a vector and do the following:
+
+\begin{align*}
+\frac{\partial \mathcal{L}}{\partial z^{[l - 1]}} & = \left(\frac{\partial a^{[l - 1]}}{\partial z^{[l - 1]}}\right)^T\frac{\partial \mathcal{L}}{\partial a^{[l - 1]}}\\
+& = \begin{bmatrix}
+&u(z_1^{[l - 1]})\\
+&u(z_2^{[l - 1]})\\
+&\vdots\\
+&u(z_{n^{[l - 1]}}^{[l - 1]})\\
+\end{bmatrix} \odot \frac{\partial \mathcal{L}}{\partial a^{[l - 1]}}
+\end{align*}
