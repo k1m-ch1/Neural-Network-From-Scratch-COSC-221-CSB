@@ -8,6 +8,7 @@ Download the dataset from Kaggle
 
 ```
 curl -L https://www.kaggle.com/api/v1/datasets/download/hojjatk/mnist-dataset -o ./dataset.zip ```
+```
 
 Then just unzip it into a directory called `./dataset`
 

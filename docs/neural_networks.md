@@ -48,7 +48,7 @@ Now the $\text{ReLU}$ function is defined as such:
 $$
 \text{ReLU} (x) = \begin{cases}
 & x \text{ if } x < 0\\
-& x \text{ otherwise } 
+& 0 \text{ otherwise } 
 \end{cases}
 $$
 
@@ -636,4 +636,51 @@ Basically, this is useful since it connects your layer to the $l + 1$ layer in b
 
 Ok, now we have the math but we should try to compute the math in a more efficient way.
 
+## More efficient implementation
 
+So first of all, we know that if we use the $\text{ReLU}$ function, or sigmoid or whatever, the matrix will be diagonal. 
+
+If a matrix $D$ is diagonal, then we define the vector $\vec{d}$ to be as such:
+
+$$
+\vec{d} = \begin{bmatrix}
+&D_{11}\\
+&D_{22}\\
+&\vdots\\
+&D_{nn}\\
+\end{bmatrix}
+$$
+
+Then:
+
+$$
+\textbf{D}\textbf{x} = \vec{d} \odot \textbf{x}
+$$
+
+This saves a lot of space.
+
+Actually, let's write everything in its full form and then reduce it.
+
+So before we abstract everything away using the $\delta^{[l]}$ variable, let's lay it out bare. To adjust the biases using the chain rule:
+
+$$
+\frac{\partial \mathcal{L}}{\partial b^{[l]}} = \frac{\partial z^{[l]}}{\partial b^{[l]}} \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+$$
+
+But we know that:
+
+$$
+\frac{\partial z^{[l]}}{\partial b^{[l]}} = I_{n^{[l]} \times n^{[l]}}
+$$
+
+So basically:
+
+$$
+\frac{\partial \mathcal{L}}{\partial b^{[l]}} = I_{n^{[l]} \times n^{[l]}} \frac{\partial \mathcal{L}}{\partial z^{[l]}} = \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+$$
+
+Ok now, we need to do it for $\frac{\partial \mathcal{L}}{\partial W^{[l]}}$
+
+Alright, this is a rank 3 tensor, so we have to be careful.
+
+We've already broken
