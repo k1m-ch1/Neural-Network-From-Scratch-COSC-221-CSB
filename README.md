@@ -35,3 +35,14 @@ So it seems like by convention:
 - we divide our dataset into training data, and then testing data
 - currently, it seems like we have 60k training examples and 10k testing examples
 - they do this to see how well the model has generalized
+
+# TODO
+
+## Forward propagation
+
+- [] variable L for layer
+- [] a list $n^{[l]}$ for the size at each layer
+- [] initialize using He's initalization
+- [] forward propagation step using that forward propagation formula
+
+## Backward propagation
