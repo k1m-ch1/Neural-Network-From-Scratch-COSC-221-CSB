@@ -18,8 +18,8 @@ def get_labels(filename):
         return [int.from_bytes(file.read(1)) for _ in range(number_of_labels)]
 
 if __name__ == "__main__":
-    images = get_images("./dataset/t10k-images.idx3-ubyte")
-    labels = get_labels("./dataset/t10k-labels.idx1-ubyte")
+    images = get_images("../dataset/t10k-images.idx3-ubyte")
+    labels = get_labels("../dataset/t10k-labels.idx1-ubyte")
     N = 100
     for n in range(N):
         plt.title(f"This is an image of a {labels[n]}")

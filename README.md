@@ -7,7 +7,7 @@ Neural Network to classify handwritten digits (a rite of passage project at this
 Download the dataset from Kaggle
 
 ```
-curl -L https://www.kaggle.com/api/v1/datasets/download/hojjatk/mnist-dataset -o ./dataset.zip ```
+curl -L https://www.kaggle.com/api/v1/datasets/download/hojjatk/mnist-dataset -o ./dataset.zip
 ```
 
 Then just unzip it into a directory called `./dataset`
@@ -35,6 +35,11 @@ So it seems like by convention:
 - we divide our dataset into training data, and then testing data
 - currently, it seems like we have 60k training examples and 10k testing examples
 - they do this to see how well the model has generalized
+
+# Reference model
+
+For now, we'll use a reference model through `scikit-learn`
+
 
 # TODO
 
