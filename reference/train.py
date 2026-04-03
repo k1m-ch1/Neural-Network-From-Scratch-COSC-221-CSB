@@ -1,38 +1,44 @@
-from src.read_dataset import get_images
-from src.read_dataset import get_labels
+from src.read_dataset import *
+from src.read_dataset import *
 import numpy as np
 from sklearn.neural_network import MLPClassifier
+import pickle
 
 if __name__ == "__main__":
-    images = get_images("dataset/train-images.idx3-ubyte")
-    labels = get_labels("dataset/train-labels.idx1-ubyte")
+    x = get_images_fast("dataset/train-images.idx3-ubyte")
+    y = get_labels_fast("dataset/train-labels.idx1-ubyte")
 
-    test_images = get_images("dataset/t10k-images.idx3-ubyte")
-    test_labels = get_labels("dataset/t10k-labels.idx1-ubyte")
+    x_test = get_images_fast("dataset/t10k-images.idx3-ubyte")
+    y_test = get_labels_fast("dataset/t10k-labels.idx1-ubyte")
 
-    x = np.array(images)
-    y = np.array(labels)
+    # reshape and normalize
+    x = x.reshape(x.shape[0], -1)/255
 
-    x_test = np.array(test_images)
-    y_test = np.array(test_labels)
-
-    x = x.reshape(x.shape[0], -1)
-    # normalize
-    x = x / 255
-
-    x_test = x_test.reshape(x_test.shape[0], -1)
-    x_test = x_test / 255
+    # reshape and normalize
+    x_test = x_test.reshape(x_test.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(128, 64),
+        hidden_layer_sizes=(256, 128, 64),
         activation='relu',
-        max_iter=100,
-        verbose=True
+        solver="adam",
+        max_iter=20,
+        verbose=True,
     )
 
     model.fit(x, y)
-
     print("Test accuracy:", model.score(x_test, y_test))
-
-
-
+    #print(model.coefs_)
+    #print(model.intercepts_)
+    #np.savez("weights/sklearn_weights.npz",
+    #         weight=model.coefs_,
+    #         bias=model.intercepts_,
+    #         allow_pickle=True)
+    
+    with open("weights/sklearn_weights_and_biases.pkl", 'wb') as file:
+        pickle.dump(
+            {
+                "weights":model.coefs_,
+                "biases":model.intercepts_
+            },
+            file
+        )

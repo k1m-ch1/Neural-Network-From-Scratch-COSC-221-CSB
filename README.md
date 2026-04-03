@@ -2,6 +2,18 @@
 
 Neural Network to classify handwritten digits (a rite of passage project at this point lol)
 
+# To run
+
+```
+python -m src.main
+```
+
+For reference models from `scikit-learn`
+
+```
+python -m reference.train
+```
+
 # Dataset
 
 Download the dataset from Kaggle
