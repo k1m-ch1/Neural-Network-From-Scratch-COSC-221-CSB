@@ -55,6 +55,10 @@ For now, we'll use a reference model through `scikit-learn`
 
 # TODO
 
+## Short term
+
+- [] debug all the row vector stuff
+
 ## Forward propagation
 
 - [] variable L for layer

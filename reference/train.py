@@ -1,5 +1,4 @@
-from src.read_dataset import *
-from src.read_dataset import *
+from src.utils import *
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 import pickle
@@ -38,7 +37,8 @@ if __name__ == "__main__":
         pickle.dump(
             {
                 "weights":model.coefs_,
-                "biases":model.intercepts_
+                "biases":model.intercepts_,
+                "classes":model.classes_
             },
             file
         )
