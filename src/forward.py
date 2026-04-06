@@ -1,14 +1,6 @@
 import numpy as np
+from utils import *
 
-# ====================== ACTIVATION FUNCTIONS ======================
-def relu(z):
-    return np.maximum(0, z)
-
-def softmax(z):
-    exp_z = np.exp(z - np.max(z, axis=1, keepdims=True))  # stable softmax
-    return exp_z / np.sum(exp_z, axis=1, keepdims=True)
-
-# ====================== LOAD PRE-TRAINED WEIGHTS ======================
 def load_weights(filename="load_weight.py"):
     """Load weights from a .npz file saved from any NumPy MNIST training repo"""
     data = np.load(filename)
@@ -28,11 +20,9 @@ def forward_propagation(X, W1, b1, W2, b2):
     # Hidden layer
     Z1 = np.dot(X, W1) + b1
     A1 = relu(Z1)
-    
     # Output layer
     Z2 = np.dot(A1, W2) + b2
     A2 = softmax(Z2)
-    
     return A2
 
 # ====================== PREDICT DIGIT ======================

@@ -899,4 +899,115 @@ $$
 \boxed{\frac{\partial \mathcal{L}}{\partial W^{[l]}} = a^{[l - 1]} \otimes \frac{\partial \mathcal{L}}{\partial z^{[l]}}}
 $$ (I bet this is only true for fully connected layers)
 
+# Miscellaneous
 
+## More activation functions
+
+### ReLU or `relu`
+
+So we already know the $ReLU$ function that is:
+
+If:
+
+$$
+g(z) = \begin{cases}
+z \text{ if }z>0
+0 \text{ otherwise }
+\end{cases}
+$$
+
+Then:
+
+$$
+g'(z) = \begin{cases}
+1 \text{ if }z>0
+0 \text{ otherwise }
+\end{cases}
+$$
+
+Which is exactly the unit step function.
+
+### Sigmoid or `logistic`
+
+If:
+
+$$
+g(z) = \frac{1}{1 + e^{-z}} = (1 + e^{-z})^{-1}
+$$
+
+Then:
+
+\begin{align*}
+g'(z) &= -1 (-e^{-z})(1 + e^{-z})^{-2}\\
+&= e^{-z}(1 + e^{-z})^{-2} = (1 + e^{-z})(1 + e^{-z})^{-2} - (1 + e^{-z})^{-2} \\
+&= (1 + e^{-z})^{-1} - (1 + e^{-z})^{-2} \\
+&= g(z) - (g(z))^2 =\boxed{g(z)(1 - g(z))}
+\end{align*}
+
+Right... this is a logistic curve, or like, an autonomous differential equation if I remember correctly.
+
+### Tanh or `tanh`
+
+If:
+
+$$
+g(z) = \tanh z
+$$
+
+Then:
+
+\begin{align*}
+g'(z) & = \left(\frac{\sinh z}{\cosh z}\right)'\\
+& = \frac{\sinh' z \cosh z - \sinh z \cosh' z}{\cosh^2 z}\\
+& = \frac{\cosh^2 z - \sinh^2 z}{\cosh^2 z}\\
+& = \frac{1}{\cosh^2 z}
+\end{align*}
+
+If we use the identity that:
+
+$$
+\cosh^2 z - \sinh^2 z = 1
+$$
+
+Then:
+
+$$
+1 - \tanh^2 z = \frac{1}{\cosh^2 z}
+$$
+
+So:
+
+$$
+g'(z) = \frac{1}{\cosh^2 z} = 1 - \tanh^2 z = 1 - \left(g(z)\right)^2
+$$
+
+### identity
+
+I don't know why this is included
+
+If
+
+$$
+g(z) = z
+$$
+
+Then:
+
+$$
+g'(z) = 1
+$$
+
+
+## Stable softmax
+
+In practice, it seems like we don't use regular softmax, we instead use the stable softmax. This change has no effect on the derivative.
+
+The somewhat informal justification goes as such:
+
+The set of function $f(x) = Ae^x$ has the property that $f'(x) = Ae^x = f(x)$.
+
+If we let $A = e^{-C}$, then $f(x) = e^{x - C}$, for some $C$, $f(x)$ has the property that $f'(x) = f(x)$.
+
+And so, whatever we've done prior to get $\frac{\partial \mathcal{L}}{\partial z^{[L]}}$ will still hold.
+
+We choose $C = max(z^{[l]})$
