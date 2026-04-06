@@ -606,7 +606,7 @@ $$
 &0\\
 &0\\
 &\vdots\\
-&a_j^{[l]} \quad (\text{ at row } i)\\
+&a_j^{[l - 1]} \quad (\text{ at row } i)\\
 &\vdots\\
 &0\\
 \end{bmatrix}
@@ -725,7 +725,7 @@ $$
 &0\\
 &0\\
 &\vdots\\
-&a_j^{[l]} \quad (\text{ at row } i)\\
+&a_j^{[l - 1]} \quad (\text{ at row } i)\\
 &\vdots\\
 &0\\
 \end{bmatrix}
@@ -746,7 +746,7 @@ This means that we can probably simply this matrix a bit further. Also, this onl
 Notice that in this case:
 
 $$
-\frac{\partial \mathcal{L}}{\partial W^{[l]}} = a^{[l]} \otimes \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+\frac{\partial \mathcal{L}}{\partial W^{[l]}} = a^{[l - 1]} \otimes \frac{\partial \mathcal{L}}{\partial z^{[l]}}
 $$
 
 Ok so that simplifies quite nicely...
@@ -805,3 +805,98 @@ And it's diagonal too. So we basically turn this into a vector and do the follow
 &u(z_{n^{[l - 1]}}^{[l - 1]})\\
 \end{bmatrix} \odot \frac{\partial \mathcal{L}}{\partial a^{[l - 1]}}
 \end{align*}
+
+# Recap
+
+## Forward propagation
+
+We choose:
+
+- $g^{[L]}$ to be softmax and $\mathcal{L}(y, \hat{y})$ to be cross-entropy loss for classification (hard-coded)
+- $g^{[l]} \text{ for }(0 < l < L$) to be ReLU, but let's just keep it flexible for now
+
+And from there:
+
+$$
+\begin{cases}
+&a^{[l]} = g^{[l]} (z^{[l]})\\
+&z^{[l]} = W^{[l]} a^{[l - 1]} + b^{[l]}
+\end{cases}
+$$
+
+## Backward propagation
+
+So, since we've hard-coded the softmax + cross-entropy loss, we've shown that:
+
+$$
+\boxed{
+\frac{\partial \mathcal{L}}{\partial z^{[L]}} = a^{[L]} - y
+}
+$$
+
+And in fact, it seems like people define:
+
+$$
+\delta^{[l]} = \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+$$
+
+We can basically say:
+
+$$
+\delta^{[L]} = a^{[L]} - y
+$$
+
+I won't use this though, but perhaps I'll define it in code.
+
+Now we propagate backwards as such:
+
+$$
+\frac{\partial \mathcal{L}}{\partial z^{[l - 1]}} = \begin{bmatrix}
+&u(z_1^{[l - 1]})\\
+&u(z_2^{[l - 1]})\\
+&\vdots\\
+&u(z_{n^{[l - 1]}}^{[l - 1]})\\
+\end{bmatrix} \odot \frac{\partial \mathcal{L}}{\partial a^{[l - 1]}}
+$$
+
+This is for ReLU. If we want to keep it general (let's say if we want to use sigmoid or something):
+$$
+\frac{\partial \mathcal{L}}{\partial z^{[l - 1]}} = \begin{bmatrix}
+&g'(z_1^{[l - 1]})\\
+&g'(z_2^{[l - 1]})\\
+&\vdots\\
+&g'(z_{n^{[l - 1]}}^{[l - 1]})\\
+\end{bmatrix} \odot \frac{\partial \mathcal{L}}{\partial a^{[l - 1]}}
+$$
+
+With:
+
+$$
+\frac{\partial \mathcal{L}}{\partial a^{[l - 1]}} = \left(W^{[l]}\right)^T \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+$$
+
+And so, we can combine:
+
+$$
+\boxed{
+\frac{\partial \mathcal{L}}{\partial z^{[l - 1]}} = \begin{bmatrix}
+&g'(z_1^{[l - 1]})\\
+&g'(z_2^{[l - 1]})\\
+&\vdots\\
+&g'(z_{n^{[l]}}^{[l - 1]})\\
+\end{bmatrix} \odot \left(\left(W^{[l]}\right)^T \frac{\partial \mathcal{L}}{\partial z^{[l]}}\right)
+}
+$$
+
+
+Now at each step, our job is to compute:
+
+$$
+\boxed{\frac{\partial \mathcal{L}}{\partial b^{[l]}} = \frac{\partial \mathcal{L}}{\partial z^{[l]}}}
+$$ (This one is in fact true even for like CNN, non-fully connected layer or something like that)
+
+$$
+\boxed{\frac{\partial \mathcal{L}}{\partial W^{[l]}} = a^{[l - 1]} \otimes \frac{\partial \mathcal{L}}{\partial z^{[l]}}}
+$$ (I bet this is only true for fully connected layers)
+
+
