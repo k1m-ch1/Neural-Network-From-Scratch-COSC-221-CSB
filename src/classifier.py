@@ -1,4 +1,6 @@
 import pickle
+
+from matplotlib import text
 from src.utils import *
 import copy
 
@@ -11,7 +13,7 @@ class MLPClassifier:
         "identity":(identity, d_identity)
     }
 
-    def __init__(self, hidden_layer_sizes, max_iter:int=20, activation:str='relu', verbose:bool=False) -> None:
+    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', verbose:bool=False) -> None:
         """
         We basically are implementing a stripped down version of the scikit learn MLPClassifier class. No solvers, we're only going to use stochastic gradient descent.
 
@@ -24,6 +26,8 @@ class MLPClassifier:
         Return:
             None
         """
+        if hidden_layer_sizes == tuple():
+            raise ValueError("The hidden layer must exist")
         self.hidden_layer_sizes = hidden_layer_sizes
         self.max_iter = max_iter
         self.verbose = verbose
@@ -78,16 +82,16 @@ class MLPClassifier:
             # forward propagation
             Y = []
             for x in X:
-                y = x
+                # need to flatten the image, or turn 2d list into 1d list
+                y = x.flatten()
                 for weight, bias in zip(self.coefs_[:-1], self.intercepts_[:-1]):
-                    y = self.activation(weight@y + bias)
+                    y = self.activation(y@weight + bias)
 
                 # at the final layer, use softmax
                 weight = self.coefs_[-1]
                 bias = self.intercepts_[-1]
-                y = softmax(weight@y + bias)
+                y = softmax(y@weight + bias)
                 Y.append(y)
-
             return Y
         except NameError as e:
             raise NameError(f"You can't do forward propagation before acquiring the weights: {e}")
@@ -98,6 +102,23 @@ class MLPClassifier:
         """
         Y = self.predict_proba(X)
         return [self.classes_[y.argmax()] for y in Y]
+
+    def score(self, X, Y):
+        """
+        Just gives the percentage at which we predicted the right label.
+
+        Args:
+            X (numpy darray): a list of features
+            Y (numpy darray): a list of labels for those features
+
+        Return:
+            result (tuple): (score, another tuple of index of failed prediction)
+        """
+
+        boolean_array_result = np.array(self.predict(X)) == np.array(Y)
+        incorrect_indicies = np.where(~boolean_array_result)[0]
+        score = sum(boolean_array_result)/len(boolean_array_result)
+        return score, incorrect_indicies
 
     def fit(self, X, Y) -> None:
         """
@@ -114,6 +135,7 @@ class MLPClassifier:
 if __name__ == "__main__":
     #images = get_images_fast("dataset/train-images.idx3-ubyte")
     #labels = get_labels_fast("dataset/train-labels.idx1-ubyte")
+    import matplotlib.pyplot as plt
     test_images = get_images_fast("dataset/t10k-images.idx3-ubyte")
     test_labels = get_labels_fast("dataset/t10k-labels.idx1-ubyte")
 
@@ -127,9 +149,25 @@ if __name__ == "__main__":
         max_iter=20,
         verbose=True,
     )
+
     with open("weights/sklearn_weights_and_biases.pkl", 'rb') as file:
         weights_and_biases = pickle.load(file)
-        #print(weights_and_biases["biases"])
         model.load_weights(weights_and_biases["weights"],
                            weights_and_biases["biases"],
                            weights_and_biases["classes"])
+        N = 1_000
+        #predicted_dist = model.predict_proba(test_images[:N])
+        #predicted_label = model.predict(test_images[:N])
+        #for i in range(N):
+        #    plt.imshow(test_images[i])
+        #    plt.title(f"this is an image of {test_labels[i]}, predicted dist: {predicted_dist[i]}, predicted label: {predicted_label[i]}")
+        #    plt.show()
+        score, incorrect_indicies = model.score(test_images[:N], test_labels[:N])
+
+        print("score: ", score)
+        print("incorrect indicies: ", incorrect_indicies)
+        for i in incorrect_indicies:
+            predicted_label = model.predict([test_images[i]])[0]
+            plt.imshow(test_images[i])
+            plt.title(f"actual label: {test_labels[i]}, predicted label: {predicted_label}")
+            plt.show()
