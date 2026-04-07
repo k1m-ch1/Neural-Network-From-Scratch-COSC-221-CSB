@@ -1011,3 +1011,36 @@ If we let $A = e^{-C}$, then $f(x) = e^{x - C}$, for some $C$, $f(x)$ has the pr
 And so, whatever we've done prior to get $\frac{\partial \mathcal{L}}{\partial z^{[L]}}$ will still hold.
 
 We choose $C = max(z^{[l]})$
+
+## Row vectors
+
+So in practice, we use row vectors. This means that instead of representing:
+
+$$
+a^{[l]} = \begin{bmatrix}
+&a_1\\
+&a_2\\
+&\vdots\\
+&a_{n^{[l]}}\\
+\end{bmatrix}
+$$
+
+We represent:
+
+$$
+a^{[l]} = \begin{bmatrix}
+&a_1
+&a_2
+&\cdots
+&a_{n^{[l]}}
+\end{bmatrix}
+$$
+
+So our forward propagation equation becomes:
+
+$$
+\begin{cases}
+&a^{[l]} = g^{[l]}(z^{[l]})\\
+&z^{[l]} = a^{[l - 1]} W^T + b^{[l]}\\
+\end{cases}
+$$

@@ -39,23 +39,24 @@ class MLPClassifier:
         """
 
         # weights contains a list of weight matrix
-        expected_weights_shape = tuple((self.hidden_layer_sizes[i],self.hidden_layer_sizes[i + 1]) 
+        expected_weights_shape = tuple((self.hidden_layer_sizes[i],self.hidden_layer_sizes[i + 1])
             for i in range(len(self.hidden_layer_sizes) - 1))
-
-        actual_weights_shape = tuple(w.shape for w in coefs[1:-1])  
+        # (256, 128), (128, 64), (64, 10)
+        actual_weights_shape = tuple(w.shape for w in coefs[1:-1])
         if actual_weights_shape != expected_weights_shape:
             raise ValueError(f"Please load weights of the right shape for this model. Expected hidden layer weight shape {expected_weights_shape}")
 
-        expected_biases_shape = tuple((l,) for l in self.hidden_layer_sizes)
+        expected_biases_shape = tuple((b, )
+            for b in self.hidden_layer_sizes)
         actual_biases_shape = tuple(b.shape for b in intercepts[:-1])
         if actual_biases_shape != expected_biases_shape:
-            raise ValueError(f"Please load biases of the right shape for this model. Expected hidden layer weight shape {expected_biases_shape}, got {actual_biases_shape}")
-
-        if (coefs[0].shape[1] != intercepts[0].shape[0]) or (coefs[-1].shape[0] != intercepts[-1].shape[0]):
+            raise ValueError(f"Please load biases of the right shape for this model. Expected hidden layer weight shape {expected_biases_shape}, got {actual_biases_shape}"
+)
+        if (coefs[-1].shape[1] != intercepts[-1].shape[0]):
             raise ValueError("The weights you passed doesn't match that shape of the biases.")
 
-        if len(classes) != intercepts.shape[-1][0]:
-            raise ValueError("The classes's shape doesn't match that of the weights and biases")
+        if (intercepts[-1].shape[0] != len(classes)):
+            raise ValueError("The classes you picked doesn't the size of the biases")
 
         self.coefs_ = copy.deepcopy(coefs)
         self.intercepts_ = copy.deepcopy(intercepts)
