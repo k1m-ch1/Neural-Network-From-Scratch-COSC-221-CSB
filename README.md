@@ -61,9 +61,9 @@ For now, we'll use a reference model through `scikit-learn`
 
 ## Forward propagation
 
-- [] variable L for layer
-- [] a list $n^{[l]}$ for the size at each layer
+- [x] variable L for layer
+- [x] a list $n^{[l]}$ for the size at each layer
 - [] initialize using He's initalization
-- [] forward propagation step using that forward propagation formula
+- [x] forward propagation step using that forward propagation formula
 
 ## Backward propagation

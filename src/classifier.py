@@ -82,7 +82,7 @@ class MLPClassifier:
 
         try:
             # forward propagation
-            Z = []
+            Z = [X]
             Y = X
             for weight, bias in zip(self.coefs_[:-1], self.intercepts_[:-1]):
                 z = Y@weight + bias
@@ -92,6 +92,7 @@ class MLPClassifier:
             bias = self.intercepts_[-1]
             z = Y@weight + bias
             Y = softmax(z)
+            Z.append(z)
             return Y, Z
 
         except NameError as e:
@@ -128,11 +129,6 @@ class MLPClassifier:
         Return:
             result (tuple): (score, another tuple of index of failed prediction)
         """
-        #print(X)
-        #print(self.predict_proba(X))
-        #print(self.predict(X))
-        #print(self.predict(X))
-        #print(np.array(Y))
         boolean_array_result = np.array(self.predict(X)) == np.array(Y)
         incorrect_indicies = np.where(~boolean_array_result)[0]
         score = sum(boolean_array_result)/len(boolean_array_result)
@@ -143,7 +139,8 @@ class MLPClassifier:
         This is to train the model, in order to adjust the weights and biases.
 
         Args:
-            X (numpy darray): a numpy array with shape (number of samples, number of features) y (numpy darray): the labels with shape (number of sampels, )
+            X (numpy darray): a numpy array with shape (number of samples, number of features) 
+            y (numpy darray): the labels with shape (number of sampels, )
         Return:
             None
         """
@@ -152,61 +149,79 @@ class MLPClassifier:
         # first divide into batches
         # i hate naming conventions
         Y = y
-        for i in range(np.ceil(len(X)/self.batch_size)):
+        self.classes_ = np.unique(Y)
+        # TODO: He initialization...
+        for i in range(int(np.ceil(len(X)/self.batch_size))):
             x = X[self.batch_size*i:min(self.batch_size*(i + 1), len(X))]
-            y = X[self.batch_size*i:min(self.batch_size*(i + 1), len(y))]
+            y = Y[self.batch_size*i:min(self.batch_size*(i + 1), len(y))]
+            # one hot labeling
+            indices= np.searchsorted(self.classes_, y)
+            y = np.eye(len(self.classes_))[indices]
 
             # so we now need to propagate backwards
 
             # first need to compute delta[L]
             L = len(self.hidden_layer_sizes) + 1
             # forward propagation to get a^{[L]}
-            a = self.predict_proba(x)
+            a, Z = self.forward(x)
             delta = a - y
-            for W, b in zip(self.coefs_, self.intercepts_):
-                #delta = self.d_activation()
-                pass
+            for l in range(L - 1):
+                # need to go backwards
+                l = L - l
+                # this should stop at l = 2
+                W = self.coefs_[l - 1]
+                delta = self.d_activation(Z[l])*(delta @ W.transpose())
+                db = delta
+                dW = np.outer(self.activation(Z[l - 1]), delta)
+                # adjust weights
+                self.coefs_[l - 1] -= self.alpha * dW.mean(axis=1)
+                self.intercepts_[l - 1] -= self.alpha * db.mean(axis=1)
 
-
+            # now we need to deal with l = 1
+            db = delta
+            dW = np.outer(Z[0], delta)
+            self.coefs_[0] -= self.alpha * dW.mean(axis=1)
+            self.intercepts_[0] -= self.alpha * db.mean(axis=1)
 
 if __name__ == "__main__":
-    #images = get_images_fast("dataset/train-images.idx3-ubyte")
-    #labels = get_labels_fast("dataset/train-labels.idx1-ubyte")
+    images = get_images_fast("dataset/train-images.idx3-ubyte")
+    labels = get_labels_fast("dataset/train-labels.idx1-ubyte")
     import matplotlib.pyplot as plt
     test_images = get_images_fast("dataset/t10k-images.idx3-ubyte")
     test_labels = get_labels_fast("dataset/t10k-labels.idx1-ubyte")
 
-    #x = images.reshape(images.shape[0], -1)/255
+    X = images.reshape(images.shape[0], -1)/255
 
-    x_test = test_images.reshape(test_images.shape[0], -1)/255
+    X_test = test_images.reshape(test_images.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(128,),
+        hidden_layer_sizes=(128, 64, 32),
         activation='relu',
         max_iter=20,
         verbose=True,
     )
 
-    with open("weights/sklearn_weights_and_biases.pkl", 'rb') as file:
-        weights_and_biases = pickle.load(file)
-        model.load_weights(weights_and_biases["weights"],
-                           weights_and_biases["biases"],
-                           weights_and_biases["classes"])
-        N = 1_000
-        #predicted_dist = model.predict_proba(test_images[:N])
-        #predicted_label = model.predict(test_images[:N])
-        #for i in range(N):
-        #    plt.imshow(test_images[i])
-        #    plt.title(f"this is an image of {test_labels[i]}, predicted dist: {predicted_dist[i]}, predicted label: {predicted_label[i]}")
-        #    plt.show()
-        score, incorrect_indicies = model.score(x_test[:N], test_labels[:N])
+    N = 5
 
-        print("score: ", score)
-        print("incorrect indicies: ", incorrect_indicies)
-        predicted_label = model.predict(np.array([x_test[i] for i in incorrect_indicies]))
-        print(predicted_label)
-        for i in incorrect_indicies:
-            predicted_label = model.predict(np.array([x_test[i]]))[0]
-            plt.imshow(test_images[i])
-            plt.title(f"actual label: {test_labels[i]}, predicted label: {predicted_label}")
-            plt.show()
+    model.fit(X[:N], labels[:N])
+
+
+    #with open("weights/sklearn_weights_and_biases.pkl", 'rb') as file:
+    #    weights_and_biases = pickle.load(file)
+    #    model.load_weights(weights_and_biases["weights"],
+    #                       weights_and_biases["biases"],
+    #                       weights_and_biases["classes"])
+    #    N = 5
+    #    score, incorrect_indicies = model.score(x_test[:N], test_labels[:N])
+
+    #    print("score: ", score)
+    #    print("incorrect indicies: ", incorrect_indicies)
+    #    predict, Z = model.forward(x_test[:N])
+    #    print([i.shape for i in Z])
+    #    #predicted_label = model.predict(np.array([x_test[i] for i in incorrect_indicies]))
+    #    #print(predicted_label)
+    #    #for i in incorrect_indicies:
+    #    #    predicted_label = model.predict(np.array([x_test[i]]))[0]
+    #    #    plt.imshow(test_images[i])
+    #    #    plt.title(f"actual label: {test_labels[i]}, predicted label: {predicted_label}")
+    #    #    plt.show()

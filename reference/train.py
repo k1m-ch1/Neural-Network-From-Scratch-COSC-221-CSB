@@ -17,10 +17,9 @@ if __name__ == "__main__":
     x_test = x_test.reshape(x_test.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(128),
+        hidden_layer_sizes=(128, 64, 32),
         activation='relu',
         solver="sgd",
-        batch_size=1,
         max_iter=100,
         verbose=True
     )
