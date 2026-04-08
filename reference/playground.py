@@ -8,7 +8,5 @@ if __name__ == "__main__":
         verbose=True
     )
 
-    model.fit
-
     print(model.coefs_)
     print(model.intercepts_)

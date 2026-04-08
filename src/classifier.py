@@ -1,6 +1,5 @@
 import pickle
 
-from matplotlib import text
 from src.utils import *
 import copy
 
@@ -13,14 +12,15 @@ class MLPClassifier:
         "identity":(identity, d_identity)
     }
 
-    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', verbose:bool=False) -> None:
+    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', batch_size:int=200, alpha:float=1e-10, verbose:bool=False) -> None:
         """
         We basically are implementing a stripped down version of the scikit learn MLPClassifier class. No solvers, we're only going to use stochastic gradient descent.
 
         Args:
             hidden_layer_sizes (tuple): a tuple representing the size of each hidden layer
             max_iter (int): the number of passes through the whole dataset
-
+            activation (string): the activation function, can be relu, sigmoid, tanh, identity
+            alpha (float): the learning rate. Default is 1e-10.
             verbose (bool): a boolean representing whether we want to display progress to the user
 
         Return:
@@ -31,6 +31,8 @@ class MLPClassifier:
         self.hidden_layer_sizes = hidden_layer_sizes
         self.max_iter = max_iter
         self.verbose = verbose
+        self.alpha = alpha
+        self.batch_size = batch_size
 
         if activation not in self.activations:
             raise ValueError(f"The activation function called {activation} doesn't exist")
@@ -66,6 +68,35 @@ class MLPClassifier:
         self.intercepts_ = copy.deepcopy(intercepts)
         self.classes_ = copy.deepcopy(classes)
 
+    def forward(self, X):
+        """
+        Given a list of samples, we do forward propagation according to the weights and biases to arrive at a prediction.
+
+        Args:
+            X (numpy darray): a numpy array with shape (number of samples, number of features)
+
+        Return:
+            Y (numpy darray): a numpy array with shape (number of sample, number of types of labels) which represents a probability distribution
+            Z (list): a list that contains matrices representing z^{[l]} at layer l, for all m samples.
+        """
+
+        try:
+            # forward propagation
+            Z = []
+            Y = X
+            for weight, bias in zip(self.coefs_[:-1], self.intercepts_[:-1]):
+                z = Y@weight + bias
+                Y = self.activation(z)
+                Z.append(z)
+            weight = self.coefs_[-1]
+            bias = self.intercepts_[-1]
+            z = Y@weight + bias
+            Y = softmax(z)
+            return Y, Z
+
+        except NameError as e:
+            raise NameError(f"You can't do forward propagation before acquiring the weights: {e}")
+
 
     def predict_proba(self, X):
         """
@@ -77,31 +108,14 @@ class MLPClassifier:
         Return:
             Y (numpy darray): a numpy array with shape (number of sample, number of types of labels) which represents a probability distribution
         """
-
-        try:
-            # forward propagation
-            Y = []
-            for x in X:
-                # need to flatten the image, or turn 2d list into 1d list
-                y = x.flatten()
-                for weight, bias in zip(self.coefs_[:-1], self.intercepts_[:-1]):
-                    y = self.activation(y@weight + bias)
-
-                # at the final layer, use softmax
-                weight = self.coefs_[-1]
-                bias = self.intercepts_[-1]
-                y = softmax(y@weight + bias)
-                Y.append(y)
-            return Y
-        except NameError as e:
-            raise NameError(f"You can't do forward propagation before acquiring the weights: {e}")
+        return self.forward(X)[0]
 
     def predict(self, X):
         """
         A simple wrapper around predict_proba where it automatically maps the probability distribution to the best match among the classes.
         """
         Y = self.predict_proba(X)
-        return [self.classes_[y.argmax()] for y in Y]
+        return np.argmax(Y, axis=1)
 
     def score(self, X, Y):
         """
@@ -114,23 +128,46 @@ class MLPClassifier:
         Return:
             result (tuple): (score, another tuple of index of failed prediction)
         """
-
+        #print(X)
+        #print(self.predict_proba(X))
+        #print(self.predict(X))
+        #print(self.predict(X))
+        #print(np.array(Y))
         boolean_array_result = np.array(self.predict(X)) == np.array(Y)
         incorrect_indicies = np.where(~boolean_array_result)[0]
         score = sum(boolean_array_result)/len(boolean_array_result)
         return score, incorrect_indicies
 
-    def fit(self, X, Y) -> None:
+    def fit(self, X, y) -> None:
         """
         This is to train the model, in order to adjust the weights and biases.
 
         Args:
-            X (numpy darray): a numpy array with shape (number of samples, number of features)
-            Y (numpy darray): the labels with shape (number of sampels, )
+            X (numpy darray): a numpy array with shape (number of samples, number of features) y (numpy darray): the labels with shape (number of sampels, )
         Return:
             None
         """
-        pass
+        if (len(X) != len(y)):
+            raise ValueError("The number of example features should match that of the number of labels given")
+        # first divide into batches
+        # i hate naming conventions
+        Y = y
+        for i in range(np.ceil(len(X)/self.batch_size)):
+            x = X[self.batch_size*i:min(self.batch_size*(i + 1), len(X))]
+            y = X[self.batch_size*i:min(self.batch_size*(i + 1), len(y))]
+
+            # so we now need to propagate backwards
+
+            # first need to compute delta[L]
+            L = len(self.hidden_layer_sizes) + 1
+            # forward propagation to get a^{[L]}
+            a = self.predict_proba(x)
+            delta = a - y
+            for W, b in zip(self.coefs_, self.intercepts_):
+                #delta = self.d_activation()
+                pass
+
+
 
 if __name__ == "__main__":
     #images = get_images_fast("dataset/train-images.idx3-ubyte")
@@ -141,10 +178,10 @@ if __name__ == "__main__":
 
     #x = images.reshape(images.shape[0], -1)/255
 
-    x_test = test_labels.reshape(test_labels.shape[0], -1)/255
+    x_test = test_images.reshape(test_images.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(256, 128, 64),
+        hidden_layer_sizes=(128,),
         activation='relu',
         max_iter=20,
         verbose=True,
@@ -162,12 +199,14 @@ if __name__ == "__main__":
         #    plt.imshow(test_images[i])
         #    plt.title(f"this is an image of {test_labels[i]}, predicted dist: {predicted_dist[i]}, predicted label: {predicted_label[i]}")
         #    plt.show()
-        score, incorrect_indicies = model.score(test_images[:N], test_labels[:N])
+        score, incorrect_indicies = model.score(x_test[:N], test_labels[:N])
 
         print("score: ", score)
         print("incorrect indicies: ", incorrect_indicies)
+        predicted_label = model.predict(np.array([x_test[i] for i in incorrect_indicies]))
+        print(predicted_label)
         for i in incorrect_indicies:
-            predicted_label = model.predict([test_images[i]])[0]
+            predicted_label = model.predict(np.array([x_test[i]]))[0]
             plt.imshow(test_images[i])
             plt.title(f"actual label: {test_labels[i]}, predicted label: {predicted_label}")
             plt.show()

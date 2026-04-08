@@ -911,7 +911,7 @@ If:
 
 $$
 g(z) = \begin{cases}
-z \text{ if }z>0
+z \text{ if }z>0\\
 0 \text{ otherwise }
 \end{cases}
 $$
@@ -920,7 +920,7 @@ Then:
 
 $$
 g'(z) = \begin{cases}
-1 \text{ if }z>0
+1 \text{ if }z>0\\
 0 \text{ otherwise }
 \end{cases}
 $$
@@ -1044,3 +1044,35 @@ $$
 &z^{[l]} = a^{[l - 1]} W^T + b^{[l]}\\
 \end{cases}
 $$
+
+## Batching
+
+Ok so I've mentioned that we're going to do:
+
+$$
+W_{ij (\text{new})}^{[l]} = W_{ij (\text{old})}^{[l]} - \alpha \frac{\partial \mathcal{L}}{\partial W_{ij (\text{old})}^{[l]}}
+$$
+
+But really, that's quite slow, and so, we're going to need to batch it.
+
+So let's say that each batch contains $m$ training examples.
+
+Then we say that each batch $X$ is then:
+
+$$
+X = \begin{bmatrix}
+&x^{(1)}& x^{(2)} & \cdots & x^{(m)}\\
+\end{bmatrix}
+$$
+
+Now we literally just input that into our forward propagation algorithm (and the shape will match since a matrix is just a list of vectors). We get the following:
+
+$$
+J = \begin{bmatrix}
+&\mathcal{L}^{(1)}&\mathcal{L}^{(2)}&\cdots&\mathcal{L}^{(m)}
+\end{bmatrix}
+$$
+
+So with `numpy`, I can literally just replace all vectors with matrices and it will literally just work fine, but instead of getting a scalar, I'll get a vector of size $m$, and all i need to do is take each component and just average them over the batch and adjust the weights and biases accordingly.
+
+Now, each $\frac{\partial \mathcal{L}}{\partial W_ij^{[l]}}$ and $\frac{\partial \mathcal{L}}{\partial b^{[l]}_i}$ will be a vector of size $m$ rather than just a scalar. All we need to do is to average it and then adjust the weights and biases accordingly, according to a learning rate $\alpha$
