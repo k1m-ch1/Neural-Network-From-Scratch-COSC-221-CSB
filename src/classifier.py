@@ -150,10 +150,29 @@ class MLPClassifier:
         # i hate naming conventions
         Y = y
         self.classes_ = np.unique(Y)
-        # TODO: He initialization...
+        self.coefs_ = []
+        self.intercepts_= []
+        for i in range(len(self.hidden_layer_sizes) + 1):
+            n = int()
+            n_prev = int()
+            if i == len(self.hidden_layer_sizes):
+                n = len(self.classes_)
+            else:
+                n = self.hidden_layer_sizes[i]
+
+            if i == 0:
+                n_prev = X.shape[1]
+            else:
+                n_prev = self.hidden_layer_sizes[i - 1]
+            # He's initialization sets variance = 2/n^{[l - 1]}
+            self.coefs_.append(np.random.normal(0, np.sqrt(2/n_prev), size=(n_prev, n)))
+            self.intercepts_.append(np.zeros(n))
+
+        L = len(self.hidden_layer_sizes) + 1
+        print(L)
         for i in range(int(np.ceil(len(X)/self.batch_size))):
             x = X[self.batch_size*i:min(self.batch_size*(i + 1), len(X))]
-            y = Y[self.batch_size*i:min(self.batch_size*(i + 1), len(y))]
+            y = Y[self.batch_size*i:min(self.batch_size*(i + 1), len(Y))]
             # one hot labeling
             indices= np.searchsorted(self.classes_, y)
             y = np.eye(len(self.classes_))[indices]
@@ -161,27 +180,29 @@ class MLPClassifier:
             # so we now need to propagate backwards
 
             # first need to compute delta[L]
-            L = len(self.hidden_layer_sizes) + 1
             # forward propagation to get a^{[L]}
             a, Z = self.forward(x)
+            #print(a.shape)
+            print([z.shape for z in Z])
             delta = a - y
-            for l in range(L - 1):
-                # need to go backwards
+            for l in range(L):
+            #    # need to go backwards
                 l = L - l
-                # this should stop at l = 2
-                W = self.coefs_[l - 1]
-                delta = self.d_activation(Z[l])*(delta @ W.transpose())
-                db = delta
-                dW = np.outer(self.activation(Z[l - 1]), delta)
-                # adjust weights
-                self.coefs_[l - 1] -= self.alpha * dW.mean(axis=1)
-                self.intercepts_[l - 1] -= self.alpha * db.mean(axis=1)
+                # l goes from L to 1 (inclusive)
+            #    # this should stop at l = 2
+            #    W = self.coefs_[l - 1]
+            #    delta = self.d_activation(Z[l])*(delta @ W.transpose())
+            #    db = delta
+            #    dW = np.outer(self.activation(Z[l - 1]), delta)
+            #    # adjust weights
+            #    self.coefs_[l - 1] -= self.alpha * dW.mean(axis=1)
+            #    self.intercepts_[l - 1] -= self.alpha * db.mean(axis=1)
 
-            # now we need to deal with l = 1
-            db = delta
-            dW = np.outer(Z[0], delta)
-            self.coefs_[0] -= self.alpha * dW.mean(axis=1)
-            self.intercepts_[0] -= self.alpha * db.mean(axis=1)
+            ## now we need to deal with l = 1
+            #db = delta
+            #dW = np.outer(Z[0], delta)
+            #self.coefs_[0] -= self.alpha * dW.mean(axis=1)
+            #self.intercepts_[0] -= self.alpha * db.mean(axis=1)
 
 if __name__ == "__main__":
     images = get_images_fast("dataset/train-images.idx3-ubyte")
@@ -195,16 +216,16 @@ if __name__ == "__main__":
     X_test = test_images.reshape(test_images.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(128, 64, 32),
+        hidden_layer_sizes=(16, 8),
         activation='relu',
         max_iter=20,
+        batch_size=5,
         verbose=True,
     )
 
-    N = 5
+    N = 50
 
     model.fit(X[:N], labels[:N])
-
 
     #with open("weights/sklearn_weights_and_biases.pkl", 'rb') as file:
     #    weights_and_biases = pickle.load(file)

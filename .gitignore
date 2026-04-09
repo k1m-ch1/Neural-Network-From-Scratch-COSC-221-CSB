@@ -1,4 +1,5 @@
 **/dataset
-**/__pycache__/
+**/__pycache__/*
 **/weights
 *.pkl
+**/__marimo__/*

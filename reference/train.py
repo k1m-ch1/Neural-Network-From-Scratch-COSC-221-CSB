@@ -17,14 +17,15 @@ if __name__ == "__main__":
     x_test = x_test.reshape(x_test.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(128, 64, 32),
+        hidden_layer_sizes=(16, 8),
         activation='relu',
         solver="sgd",
         max_iter=100,
         verbose=True
     )
-
     model.fit(x, y)
+    print([W.shape for W in model.coefs_])
+    print([b.shape for b in model.intercepts_])
     print("Test accuracy:", model.score(x_test, y_test))
     #print(model.coefs_)
     #print(model.intercepts_)

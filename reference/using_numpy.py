@@ -54,7 +54,7 @@ def _(A, np):
                  [2, 1]])
     # works just fine..., no wonder we use it.
     Y @ A
-    return
+    return (Y,)
 
 
 @app.cell
@@ -87,14 +87,23 @@ def _(mo):
     \end{bmatrix}
     $$
 
-    But everything in numpy is a row vector.
+    But we turn it into row vectors or something?
     """)
     return
 
 
 @app.cell
-def _(a, b, np):
-    np.outer(b,a)
+def _(Y, a, b):
+    print(a)
+    print(b)
+    print(Y)
+    return
+
+
+@app.cell
+def _(np):
+    Z = np.array([[1,2,3],
+                 [4,3,2]])
     return
 
 
@@ -102,6 +111,11 @@ def _(a, b, np):
 def _(np):
     # sampling from a normal distribution.
     np.random.normal(3, 2, size=(3,5))
+    return
+
+
+@app.cell
+def _():
     return
 
 
