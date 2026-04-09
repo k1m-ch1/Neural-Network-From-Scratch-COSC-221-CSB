@@ -12,7 +12,7 @@ class MLPClassifier:
         "identity":(identity, d_identity)
     }
 
-    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', batch_size:int=200, alpha:float=1e-5, verbose:bool=False) -> None:
+    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', batch_size:int=200, alpha:float=1e-4, verbose:bool=False) -> None:
         """
         We basically are implementing a stripped down version of the scikit learn MLPClassifier class. No solvers, we're only going to use stochastic gradient descent.
 
@@ -110,13 +110,14 @@ class MLPClassifier:
         Return:
             Y (numpy darray): a numpy array with shape (number of sample, number of types of labels) which represents a probability distribution
         """
-        return self.forward(X)[0]
+        return self.forward(X)[0][-1]
 
     def predict(self, X):
         """
         A simple wrapper around predict_proba where it automatically maps the probability distribution to the best match among the classes.
         """
         Y = self.predict_proba(X)
+        print(Y.shape)
         return np.argmax(Y, axis=1)
 
     def score(self, X, Y):
@@ -186,29 +187,23 @@ class MLPClassifier:
                 a, Z = self.forward(x)
                 # J for the batch loss matrix
                 J = cross_entropy_loss(y, a[-1])
-                delta = None
-                for l in range(L):
+                delta = a[-1] - y
+                for l in reversed(range(L)):
                     # need to go backwards
-                    l = L - l
-                    # l goes from L to 1 (inclusive)
-                    W = self.coefs_[l - 1]
-                    # Hadamard product
-                    if l == L:
-                        delta = a[L] - y
-                    else:
-                        # as in the weight matrix of the next layer
-                        W_next = self.coefs_[l]
-                        delta = self.d_activation(Z[l])*(delta @ W_next.transpose())
-                        # delta has shape (m, n^{[l]})
+                    # l goes from L - 1 to 0 (inclusive)
+                    #dW = a[l][:,:,None]@delta[:,None,:]
+                    dW = (a[l].T @ delta) / x.shape[0]  # divide by batch size
                     db = delta
-                    # Z[l - 1] has a shape of (m, n^{[l - 1]})
-                    # delta has a shape of (m, n^{[l]})
-                    # we should expect dW to have a shape of (m, n^{[l - 1]}, n^{[l]})
-                    dW = a[l - 1][:,:,None]@delta[:,None,:]
                     # adjust weights
-                    self.coefs_[l - 1] -= self.alpha * dW.mean(axis=0)
-                    self.intercepts_[l - 1] -= self.alpha * db.mean(axis=0)
-            print(f"Finished iteration {iter_num + 1}/{self.max_iter}. Loss: {np.mean(J, axis=0)}")
+                    W = self.coefs_[l]
+                    self.coefs_[l] -= self.alpha * dW.mean(axis=0)
+                    self.intercepts_[l] -= self.alpha * db.mean(axis=0)
+
+                    if l > 0:
+                        delta = self.d_activation(Z[l])*(delta @ W.T)
+
+            if self.verbose:
+                print(f"Finished iteration {iter_num + 1}/{self.max_iter}. Loss: {np.mean(J, axis=0)}")
 
 
 if __name__ == "__main__":
@@ -225,7 +220,7 @@ if __name__ == "__main__":
     model = MLPClassifier(
         hidden_layer_sizes=(16, 8),
         activation='relu',
-        max_iter=100,
+        max_iter=20,
         batch_size=200,
         verbose=True,
     )
@@ -238,9 +233,9 @@ if __name__ == "__main__":
     #    model.load_weights(weights_and_biases["weights"],
     #                       weights_and_biases["biases"],
     #                       weights_and_biases["classes"])
-    N = 10
-    score, incorrect_indicies = model.score(X_test[:N], test_labels[:N])
 
+    N = 1_000
+    score, incorrect_indicies = model.score(X_test[:N], test_labels[:N])
     print("score: ", score)
     print("incorrect indicies: ", incorrect_indicies)
     #predict, Z = model.forward(X_test[:N])
