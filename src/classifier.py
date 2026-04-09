@@ -12,7 +12,7 @@ class MLPClassifier:
         "identity":(identity, d_identity)
     }
 
-    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', batch_size:int=200, alpha:float=1e-10, verbose:bool=False) -> None:
+    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', batch_size:int=200, alpha:float=1e-5, verbose:bool=False) -> None:
         """
         We basically are implementing a stripped down version of the scikit learn MLPClassifier class. No solvers, we're only going to use stochastic gradient descent.
 
@@ -76,22 +76,23 @@ class MLPClassifier:
             X (numpy darray): a numpy array with shape (number of samples, number of features)
 
         Return:
-            Y (numpy darray): a numpy array with shape (number of sample, number of types of labels) which represents a probability distribution
+            Y (list): a numpy array with shape (number of sample, number of types of labels) which represents a probability distribution
             Z (list): a list that contains matrices representing z^{[l]} at layer l, for all m samples.
+            activations (list): a list containing a^{[l]}.
         """
 
         try:
             # forward propagation
             Z = [X]
-            Y = X
+            Y = [X]
             for weight, bias in zip(self.coefs_[:-1], self.intercepts_[:-1]):
-                z = Y@weight + bias
-                Y = self.activation(z)
+                z = Y[-1]@weight + bias
+                Y.append(self.activation(z))
                 Z.append(z)
             weight = self.coefs_[-1]
             bias = self.intercepts_[-1]
-            z = Y@weight + bias
-            Y = softmax(z)
+            z = Y[-1]@weight + bias
+            Y.append(softmax(z))
             Z.append(z)
             return Y, Z
 
@@ -169,40 +170,46 @@ class MLPClassifier:
             self.intercepts_.append(np.zeros(n))
 
         L = len(self.hidden_layer_sizes) + 1
-        print(L)
-        for i in range(int(np.ceil(len(X)/self.batch_size))):
-            x = X[self.batch_size*i:min(self.batch_size*(i + 1), len(X))]
-            y = Y[self.batch_size*i:min(self.batch_size*(i + 1), len(Y))]
-            # one hot labeling
-            indices= np.searchsorted(self.classes_, y)
-            y = np.eye(len(self.classes_))[indices]
+        for iter_num in range(self.max_iter):
+            J = np.array([])
+            for i in range(int(np.ceil(len(X)/self.batch_size))):
+                x = X[self.batch_size*i:min(self.batch_size*(i + 1), len(X))]
+                y = Y[self.batch_size*i:min(self.batch_size*(i + 1), len(Y))]
+                # one hot labeling
+                indices= np.searchsorted(self.classes_, y)
+                y = np.eye(len(self.classes_))[indices]
 
-            # so we now need to propagate backwards
+                # so we now need to propagate backwards
 
-            # first need to compute delta[L]
-            # forward propagation to get a^{[L]}
-            a, Z = self.forward(x)
-            #print(a.shape)
-            print([z.shape for z in Z])
-            delta = a - y
-            for l in range(L):
-            #    # need to go backwards
-                l = L - l
-                # l goes from L to 1 (inclusive)
-            #    # this should stop at l = 2
-            #    W = self.coefs_[l - 1]
-            #    delta = self.d_activation(Z[l])*(delta @ W.transpose())
-            #    db = delta
-            #    dW = np.outer(self.activation(Z[l - 1]), delta)
-            #    # adjust weights
-            #    self.coefs_[l - 1] -= self.alpha * dW.mean(axis=1)
-            #    self.intercepts_[l - 1] -= self.alpha * db.mean(axis=1)
+                # first need to compute delta[L]
+                # forward propagation to get a^{[L]}
+                a, Z = self.forward(x)
+                # J for the batch loss matrix
+                J = cross_entropy_loss(y, a[-1])
+                delta = None
+                for l in range(L):
+                    # need to go backwards
+                    l = L - l
+                    # l goes from L to 1 (inclusive)
+                    W = self.coefs_[l - 1]
+                    # Hadamard product
+                    if l == L:
+                        delta = a[L] - y
+                    else:
+                        # as in the weight matrix of the next layer
+                        W_next = self.coefs_[l]
+                        delta = self.d_activation(Z[l])*(delta @ W_next.transpose())
+                        # delta has shape (m, n^{[l]})
+                    db = delta
+                    # Z[l - 1] has a shape of (m, n^{[l - 1]})
+                    # delta has a shape of (m, n^{[l]})
+                    # we should expect dW to have a shape of (m, n^{[l - 1]}, n^{[l]})
+                    dW = a[l - 1][:,:,None]@delta[:,None,:]
+                    # adjust weights
+                    self.coefs_[l - 1] -= self.alpha * dW.mean(axis=0)
+                    self.intercepts_[l - 1] -= self.alpha * db.mean(axis=0)
+            print(f"Finished iteration {iter_num + 1}/{self.max_iter}. Loss: {np.mean(J, axis=0)}")
 
-            ## now we need to deal with l = 1
-            #db = delta
-            #dW = np.outer(Z[0], delta)
-            #self.coefs_[0] -= self.alpha * dW.mean(axis=1)
-            #self.intercepts_[0] -= self.alpha * db.mean(axis=1)
 
 if __name__ == "__main__":
     images = get_images_fast("dataset/train-images.idx3-ubyte")
@@ -218,31 +225,30 @@ if __name__ == "__main__":
     model = MLPClassifier(
         hidden_layer_sizes=(16, 8),
         activation='relu',
-        max_iter=20,
-        batch_size=5,
+        max_iter=100,
+        batch_size=200,
         verbose=True,
     )
 
-    N = 50
 
-    model.fit(X[:N], labels[:N])
+    model.fit(X, labels)
 
     #with open("weights/sklearn_weights_and_biases.pkl", 'rb') as file:
     #    weights_and_biases = pickle.load(file)
     #    model.load_weights(weights_and_biases["weights"],
     #                       weights_and_biases["biases"],
     #                       weights_and_biases["classes"])
-    #    N = 5
-    #    score, incorrect_indicies = model.score(x_test[:N], test_labels[:N])
+    N = 10
+    score, incorrect_indicies = model.score(X_test[:N], test_labels[:N])
 
-    #    print("score: ", score)
-    #    print("incorrect indicies: ", incorrect_indicies)
-    #    predict, Z = model.forward(x_test[:N])
-    #    print([i.shape for i in Z])
-    #    #predicted_label = model.predict(np.array([x_test[i] for i in incorrect_indicies]))
-    #    #print(predicted_label)
-    #    #for i in incorrect_indicies:
-    #    #    predicted_label = model.predict(np.array([x_test[i]]))[0]
-    #    #    plt.imshow(test_images[i])
-    #    #    plt.title(f"actual label: {test_labels[i]}, predicted label: {predicted_label}")
-    #    #    plt.show()
+    print("score: ", score)
+    print("incorrect indicies: ", incorrect_indicies)
+    #predict, Z = model.forward(X_test[:N])
+    #print([i.shape for i in Z])
+    #predicted_label = model.predict(np.array([x_test[i] for i in incorrect_indicies]))
+    #print(predicted_label)
+    #for i in incorrect_indicies:
+    #    predicted_label = model.predict(np.array([x_test[i]]))[0]
+    #    plt.imshow(test_images[i])
+    #    plt.title(f"actual label: {test_labels[i]}, predicted label: {predicted_label}")
+    #    plt.show()

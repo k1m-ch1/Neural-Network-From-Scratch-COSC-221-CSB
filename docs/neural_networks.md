@@ -746,7 +746,7 @@ This means that we can probably simply this matrix a bit further. Also, this onl
 Notice that in this case:
 
 $$
-\frac{\partial \mathcal{L}}{\partial W^{[l]}} = a^{[l - 1]} \otimes \frac{\partial \mathcal{L}}{\partial z^{[l]}}
+\frac{\partial \mathcal{L}}{\partial W^{[l]}} = \frac{\partial \mathcal{L}}{\partial z^{[l]}} \otimes a^{[l - 1]}
 $$
 
 Ok so that simplifies quite nicely...
@@ -883,7 +883,7 @@ $$
 &g'(z_1^{[l - 1]})\\
 &g'(z_2^{[l - 1]})\\
 &\vdots\\
-&g'(z_{n^{[l]}}^{[l - 1]})\\
+&g'(z_{n^{[l - 1]}}^{[l - 1]})\\
 \end{bmatrix} \odot \left(\left(W^{[l]}\right)^T \frac{\partial \mathcal{L}}{\partial z^{[l]}}\right)
 }
 $$

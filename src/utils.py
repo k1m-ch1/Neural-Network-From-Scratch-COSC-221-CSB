@@ -52,7 +52,7 @@ def d_relu(z):
     """
     The derivative of the ReLU function is the unit step function.
     """
-    return int(z > 0)
+    return z > 0
 
 def sigmoid(z):
     """
@@ -90,7 +90,7 @@ def softmax(z):
 def cross_entropy_loss(y, y_hat):
     epsilon = 1e-12
     y_hat = np.clip(y_hat, epsilon, 1 - epsilon) # in case that y_hat is so small that we run out of precision and it becomes 0
-    return - np.sum(y*np.log(y_hat), y_hat)
+    return - np.sum(y*np.log(y_hat), axis=1)
 
 if __name__ == "__main__":
     #import matplotlib.pyplot as plt
