@@ -1,18 +1,15 @@
-# Neural-Network-From-Scratch-COSC-221-CSB-
+# Neural-Network-From-Scratch-COSC-221-CSB
 
-Neural Network to classify handwritten digits (a rite of passage project at this point lol)
+Neural Network to classify handwritten digits (a rite of passage project at this point lol).
+
+We will try to re-implement a stripped down version of the `MLPClassifier` class from `scikit-learn` from first principles. With this, we can then train a general classifier using the Multi-Layered Perceptron model.
 
 # To run
 
-```
-python -m src.main
-```
+So since we've re-implemented an MLP using `scikit-learn`'s `MLPClassifier` as a template, the API should be familiar.
 
-For reference models from `scikit-learn`
+To import
 
-```
-python -m reference.train
-```
 
 # Dataset
 
@@ -50,14 +47,13 @@ So it seems like by convention:
 
 # Reference model
 
-For now, we'll use a reference model through `scikit-learn`
-
+For now, we'll use a reference model through `scikit-learn`. 
 
 # TODO
 
-## Short term
-
-- [] debug all the row vector stuff
+- [x] debug all the row vector stuff
+- [] package it in pip
+- [] document the API
 
 ## Forward propagation
 
@@ -67,3 +63,9 @@ For now, we'll use a reference model through `scikit-learn`
 - [x] forward propagation step using that forward propagation formula
 
 ## Backward propagation
+
+- [x] He's initialization
+- [x] back propagation
+- [x] scoring
+- [x] saving
+- [] make the learn rate $\alpha$ more adjustable
