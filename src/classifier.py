@@ -205,7 +205,7 @@ class MLPClassifier:
                 if self.verbose:
                     print(f"Finished iteration {iter_num + 1}/{self.max_iter}. Loss: {np.mean(J, axis=0)}")
 
-        except InterruptedError as e:
+        except KeyboardInterrupt as e:
             if save_path != None:
                 self.save(save_path)
             raise InterruptedError(f"Training canceled! Has saved weights to {save_path} as specified")
