@@ -12,7 +12,7 @@ class MLPClassifier:
         "identity":(identity, d_identity)
     }
 
-    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', batch_size:int=200, alpha:float=1e-4, verbose:bool=False) -> None:
+    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', batch_size:int=200, alpha:float=1e-2, verbose:bool=False) -> None:
         """
         We basically are implementing a stripped down version of the scikit learn MLPClassifier class. No solvers, we're only going to use stochastic gradient descent.
 
@@ -76,9 +76,8 @@ class MLPClassifier:
             X (numpy darray): a numpy array with shape (number of samples, number of features)
 
         Return:
-            Y (list): a numpy array with shape (number of sample, number of types of labels) which represents a probability distribution
+            Y (list): a list that contains matrices representing a^{[l]} at layer l, for all m samples.
             Z (list): a list that contains matrices representing z^{[l]} at layer l, for all m samples.
-            activations (list): a list containing a^{[l]}.
         """
 
         try:
@@ -136,74 +135,95 @@ class MLPClassifier:
         score = sum(boolean_array_result)/len(boolean_array_result)
         return score, incorrect_indicies
 
-    def fit(self, X, y) -> None:
+    def fit(self, X, y, save_path=None) -> None:
         """
         This is to train the model, in order to adjust the weights and biases.
 
         Args:
             X (numpy darray): a numpy array with shape (number of samples, number of features) 
             y (numpy darray): the labels with shape (number of sampels, )
+            save_path (string): path to save (optional)
         Return:
             None
         """
-        if (len(X) != len(y)):
-            raise ValueError("The number of example features should match that of the number of labels given")
-        # first divide into batches
-        # i hate naming conventions
-        Y = y
-        self.classes_ = np.unique(Y)
-        self.coefs_ = []
-        self.intercepts_= []
-        for i in range(len(self.hidden_layer_sizes) + 1):
-            n = int()
-            n_prev = int()
-            if i == len(self.hidden_layer_sizes):
-                n = len(self.classes_)
-            else:
-                n = self.hidden_layer_sizes[i]
+        try:
+            if (len(X) != len(y)):
+                raise ValueError("The number of example features should match that of the number of labels given")
+            # first divide into batches
+            # i hate naming conventions
+            Y = y
+            self.classes_ = np.unique(Y)
+            self.coefs_ = []
+            self.intercepts_= []
+            for i in range(len(self.hidden_layer_sizes) + 1):
+                n = int()
+                n_prev = int()
+                if i == len(self.hidden_layer_sizes):
+                    n = len(self.classes_)
+                else:
+                    n = self.hidden_layer_sizes[i]
 
-            if i == 0:
-                n_prev = X.shape[1]
-            else:
-                n_prev = self.hidden_layer_sizes[i - 1]
-            # He's initialization sets variance = 2/n^{[l - 1]}
-            self.coefs_.append(np.random.normal(0, np.sqrt(2/n_prev), size=(n_prev, n)))
-            self.intercepts_.append(np.zeros(n))
+                if i == 0:
+                    n_prev = X.shape[1]
+                else:
+                    n_prev = self.hidden_layer_sizes[i - 1]
+                # He's initialization sets variance = 2/n^{[l - 1]}
+                self.coefs_.append(np.random.normal(0, np.sqrt(2/n_prev), size=(n_prev, n)))
+                self.intercepts_.append(np.zeros(n))
 
-        L = len(self.hidden_layer_sizes) + 1
-        for iter_num in range(self.max_iter):
-            J = np.array([])
-            for i in range(int(np.ceil(len(X)/self.batch_size))):
-                x = X[self.batch_size*i:min(self.batch_size*(i + 1), len(X))]
-                y = Y[self.batch_size*i:min(self.batch_size*(i + 1), len(Y))]
-                # one hot labeling
-                indices= np.searchsorted(self.classes_, y)
-                y = np.eye(len(self.classes_))[indices]
+            L = len(self.hidden_layer_sizes) + 1
+            for iter_num in range(self.max_iter):
+                J = np.array([])
+                for i in range(int(np.ceil(len(X)/self.batch_size))):
+                    m = self.batch_size
+                    x = X[self.batch_size*i:min(self.batch_size*(i + 1), len(X))]
+                    y = Y[self.batch_size*i:min(self.batch_size*(i + 1), len(Y))]
+                    # one hot labeling
+                    indices= np.searchsorted(self.classes_, y)
+                    y = np.eye(len(self.classes_))[indices]
 
-                # so we now need to propagate backwards
+                    # so we now need to propagate backwards
 
-                # first need to compute delta[L]
-                # forward propagation to get a^{[L]}
-                a, Z = self.forward(x)
-                # J for the batch loss matrix
-                J = cross_entropy_loss(y, a[-1])
-                delta = a[-1] - y
-                for l in reversed(range(L)):
-                    # need to go backwards
-                    # l goes from L - 1 to 0 (inclusive)
-                    #dW = a[l][:,:,None]@delta[:,None,:]
-                    dW = (a[l].T @ delta) / x.shape[0]  # divide by batch size
-                    db = delta
-                    # adjust weights
-                    W = self.coefs_[l]
-                    self.coefs_[l] -= self.alpha * dW.mean(axis=0)
-                    self.intercepts_[l] -= self.alpha * db.mean(axis=0)
+                    # first need to compute delta[L]
+                    # forward propagation to get a^{[L]}
+                    a, z = self.forward(x)
 
-                    if l > 0:
-                        delta = self.d_activation(Z[l])*(delta @ W.T)
+                    # J for the batch loss matrix
+                    J = cross_entropy_loss(y, a[-1])
+                    # first calculate the batch change in bias
+                    delta = a[-1] - y
+                    for l in reversed(range(1, L)): # l goes from L - 1 to 0
+                        # make db the average already
+                        db = np.mean(delta, axis=0)
+                        dW = (a[l].T @ delta)/m
 
-            if self.verbose:
-                print(f"Finished iteration {iter_num + 1}/{self.max_iter}. Loss: {np.mean(J, axis=0)}")
+                        self.coefs_[l] -= self.alpha*dW
+                        self.intercepts_[l] -= self.alpha*db
+
+                        if l > 0:
+                            delta = (delta @ self.coefs_[l].T) * self.d_activation(z[l])
+                if self.verbose:
+                    print(f"Finished iteration {iter_num + 1}/{self.max_iter}. Loss: {np.mean(J, axis=0)}")
+
+        except InterruptedError as e:
+            if save_path != None:
+                self.save(save_path)
+            raise InterruptedError(f"Training canceled! Has saved weights to {save_path} as specified")
+
+
+    def save(self, path):
+        """
+        Saving weights as a pickle file. Path is just the file path to save at.
+        """
+        with open(path, 'wb') as file:
+                pickle.dump(
+                    {
+                        "weights":self.coefs_,
+                        "biases":self.intercepts_,
+                        "classes":self.classes_
+                    },
+                    file
+                )
 
 
 if __name__ == "__main__":
@@ -218,15 +238,16 @@ if __name__ == "__main__":
     X_test = test_images.reshape(test_images.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(16, 8),
+        hidden_layer_sizes=(128, 64),
         activation='relu',
-        max_iter=20,
+        max_iter=1000,
         batch_size=200,
         verbose=True,
     )
 
+    SAVE_PATH = "weights/self_trained_2.pkl"
 
-    model.fit(X, labels)
+    model.fit(X, labels, save_path=SAVE_PATH)
 
     #with open("weights/sklearn_weights_and_biases.pkl", 'rb') as file:
     #    weights_and_biases = pickle.load(file)
@@ -234,10 +255,11 @@ if __name__ == "__main__":
     #                       weights_and_biases["biases"],
     #                       weights_and_biases["classes"])
 
-    N = 1_000
+    N = 10_000
     score, incorrect_indicies = model.score(X_test[:N], test_labels[:N])
     print("score: ", score)
-    print("incorrect indicies: ", incorrect_indicies)
+    model.save(SAVE_PATH)
+    #print("incorrect indicies: ", incorrect_indicies)
     #predict, Z = model.forward(X_test[:N])
     #print([i.shape for i in Z])
     #predicted_label = model.predict(np.array([x_test[i] for i in incorrect_indicies]))

@@ -83,9 +83,12 @@ def d_identity(z):
     return 1
 
 def softmax(z):
-    exp_z = np.exp(z - np.max(z))  # stable softmax
+    """
+    We're expecting batched z, meaning that we will have m samples as columns, each row being the predicted classification.
+    """
+    exp_z = np.exp(z - np.max(z, axis=1, keepdims=True))  # stable softmax
     #exp_z = np.exp(z)  # stable softmax
-    return exp_z / np.sum(exp_z)
+    return exp_z / np.sum(exp_z, axis=1, keepdims=True)
 
 def cross_entropy_loss(y, y_hat):
     epsilon = 1e-12
@@ -96,7 +99,6 @@ if __name__ == "__main__":
     #import matplotlib.pyplot as plt
     #x = np.linspace(-5, 5, 100)
     #plt.plot(x, tanh(x), label="g(x)")
-    #plt.plot(x, d_tanh(x), label="g'(x)")
     #plt.legend()
     #plt.show()
     #s = softmax(np.array([1,2,3]))
