@@ -104,14 +104,14 @@ For now, we'll use a reference model through `scikit-learn`.
 # TODO
 
 - [x] debug all the row vector stuff
-- [] package it in pip
-- [] document the API
+- [x] package it in pip
+- [x] document the API
 
 ## Forward propagation
 
 - [x] variable L for layer
 - [x] a list $n^{[l]}$ for the size at each layer
-- [] initialize using He's initalization
+- [x] initialize using He's initalization
 - [x] forward propagation step using that forward propagation formula
 
 ## Backward propagation
