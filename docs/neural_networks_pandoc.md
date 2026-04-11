@@ -1076,3 +1076,81 @@ $$
 So with `numpy`, I can literally just replace all vectors with matrices and it will literally just work fine, but instead of getting a scalar, I'll get a vector of size $m$, and all i need to do is take each component and just average them over the batch and adjust the weights and biases accordingly.
 
 Now, each $\frac{\partial \mathcal{L}}{\partial W_ij^{[l]}}$ and $\frac{\partial \mathcal{L}}{\partial b^{[l]}_i}$ will be a vector of size $m$ rather than just a scalar. All we need to do is to average it and then adjust the weights and biases accordingly, according to a learning rate $\alpha$
+
+## Improving gradient descent
+
+So right now, our learning rates are fixed. Moreover, there are many more things one can do to improve gradient descent.
+
+
+
+### Momentum
+
+We've established that gradient descent follows the following formula:
+
+$$
+W_{ij (\text{new})}^{[l]} = W_{ij (\text{old})}^{[l]} - \alpha \frac{\partial \mathcal{L}}{\partial W_{ij (\text{old})}^{[l]}}
+$$
+
+Actually, we want to be a bit more descriptive.
+
+$$
+W_{ij (t+1)}^{[l]} = W_{ij (t)}^{[l]} - \alpha \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
+$$
+
+
+Now we want to introduce a damping factor $\beta$, turning this into a second order difference equation. This adds a sort of "momentum" like characteristic to it.
+
+$$
+v_{t} = \beta v_{t - 1} + \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}};\quad
+W_{ij (t+1)}^{[l]} = W_{ij (t)}^{[l]} - \alpha v_{t}
+$$
+
+Basically, we want the direction of improvement to retain some memory of its previous step, dampening the movements I suppose (at a higher level).
+
+### Adaptive learning rate $\alpha$
+
+So we compute the following:
+
+$$
+r_t = r_{t - 1} + (\frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}})^T \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
+$$
+
+then we update as follows:
+
+$$
+W_{ij (t+1)}^{[l]} = W_{ij (t)}^{[l]} - \frac{\alpha}{\sqrt{r_t + \epsilon}} \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
+$$
+
+This is called Adagrad.
+
+Now if we were to use:
+
+$$
+r_t = \beta r_{t - 1} + (1 - \beta)(\frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}})^T \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
+$$
+
+which is an exponential moving average (low pass filter), that would be called the RMSProp.
+
+### Adam
+
+Now the final iteration to this momentum + RMSProp
+
+We now have 2 kind of momentum
+
+$$
+m_t = \beta_1 m_{t - 1} + (1 - \beta_1)g_t; \quad
+v_t = \beta_2 v_{t - 1} + (1 - \beta_2)g_t^2
+$$
+
+Bias correction:
+
+$$
+\hat{m}_t = \frac{m_t}{1 - \beta_1^t};\quad
+\hat{v}_t = \frac{v_t}{1 - \beta_2^t}
+$$
+
+Final update:
+
+$$
+\theta_{t + 1} = \theta_{t} - \alpha \frac{\hat{m}_t}{\sqrt{\hat{v}_t + \epsilon}}
+$$
