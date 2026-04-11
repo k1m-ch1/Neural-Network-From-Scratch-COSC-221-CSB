@@ -3,3 +3,4 @@
 **/weights
 *.pkl
 **/__marimo__/*
+**/mlpclassifier.egg-info/*

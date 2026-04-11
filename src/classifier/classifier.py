@@ -1,6 +1,6 @@
 import pickle
 
-from src.utils import *
+from classifier.utils import *
 import copy
 
 class MLPClassifier:

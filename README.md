@@ -1,5 +1,10 @@
 # Neural-Network-From-Scratch-COSC-221-CSB
 
+Links:
+
+- [github link](https://github.com/k1m-ch1/Neural-Network-From-Scratch-COSC-221-CSB)
+- [pypi link](https://pypi.org/project/mlpclassifier/)
+
 Neural Network to classify handwritten digits (a rite of passage project at this point lol).
 
 We will try to re-implement a stripped down version of the `MLPClassifier` class from `scikit-learn` from first principles. With this, we can then train a general classifier using the Multi-Layered Perceptron model.
@@ -8,7 +13,54 @@ We will try to re-implement a stripped down version of the `MLPClassifier` class
 
 So since we've re-implemented an MLP using `scikit-learn`'s `MLPClassifier` as a template, the API should be familiar.
 
-To import
+Downloading the package
+
+```
+pip install mlpclassifier
+```
+
+Or create a virtual environment to download it.
+
+Using `uv`:
+
+```
+uv add mlpclassifier
+```
+
+To use the library:
+
+```python
+from classifier.classifier import *
+# to load the MNIST dataset.
+images = get_images_fast("dataset/train-images.idx3-ubyte")
+labels = get_labels_fast("dataset/train-labels.idx1-ubyte")
+
+test_images = get_images_fast("dataset/t10k-images.idx3-ubyte")
+test_labels = get_labels_fast("dataset/t10k-labels.idx1-ubyte")
+
+# pre-processing
+X = images.reshape(images.shape[0], -1)/255
+X_test = test_images.reshape(test_images.shape[0], -1)/255
+
+model = MLPClassifier(
+        hidden_layer_sizes=(128, 64),
+        activation='relu',
+        max_iter=1000,
+        alpha=1e-3,
+        batch_size=200,
+        verbose=True,
+)
+
+SAVE_PATH = "weights/self_trained.pkl"
+
+# if Ctrl-C, then it will save to that file path
+model.fit(X, labels, save_path=SAVE_PATH)
+
+N = 10_000
+score, incorrect_indicies = model.score(X_test[:N], test_labels[:N])
+print("score: ", score)
+model.save(SAVE_PATH)
+```
 
 
 # Dataset
