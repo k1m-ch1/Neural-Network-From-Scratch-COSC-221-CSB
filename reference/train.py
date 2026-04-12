@@ -17,12 +17,12 @@ if __name__ == "__main__":
     x_test = x_test.reshape(x_test.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(128, 64),
+        hidden_layer_sizes=(512, 256, 128, 64),
         activation='relu',
         solver="sgd",
-        alpha=10e-2,
+        alpha=10e-4,
         momentum=0.9,
-        max_iter=100,
+        max_iter=200,
         verbose=True
     )
     model.fit(x, y)

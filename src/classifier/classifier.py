@@ -13,14 +13,16 @@ class MLPClassifier:
     }
 
     learning_rates = ["constant",
-                     "adaptive"]
+                     "adaptive",
+                      
+                      ]
 
     def __init__(self, hidden_layer_sizes:tuple[int,...],
                  max_iter:int=20,
                  activation:str='relu',
                  batch_size:int=200,
                  momentum:float=0.9,
-                 alpha:float=1e-2,
+                 alpha:float=1e-3,
                  learning_rate:str='constant',
                  beta:float=0.9,
                  epsilon:float=10e-8,
@@ -36,8 +38,8 @@ class MLPClassifier:
             activation (string): the activation function, can be relu, sigmoid, tanh, identity
             alpha (float): the learning rate. Default is 1e-10.
             momentum (float): the momentum (using classical momentum).
-            learning_rate (str): can either be 'constant' or 'adaptive'. If it's 'adaptive', we will use RMSProp to adust the effective learning rate.
-            beta (float): the decay rate for RMSProp.
+            learning_rate (str): can either be 'constant' or 'adaptive'. If it's 'adaptive', we will use adagrad or maybe RMSProp to adust the effective learning rate.
+            beta (float): the decay rate.
             epsilon (float): in order to prevent a division by zero
             verbose (bool): a boolean representing whether we want to display progress to the user
         Return:
@@ -240,11 +242,11 @@ class MLPClassifier:
                         self.intercepts_momentum_[l] = self.momentum*self.intercepts_momentum_[l] + db
 
                         if self.learning_rate == "adaptive":
-                            #self.r_W[l] = self.beta*self.r_W[l] + (1 - self.beta)*(dW*dW)
-                            #self.r_b[l] = self.beta*self.r_b[l] + (1 - self.beta)*(db*db)
+                            self.r_W[l] = self.beta*self.r_W[l] + (1 - self.beta)*(dW*dW)
+                            self.r_b[l] = self.beta*self.r_b[l] + (1 - self.beta)*(db*db)
                             
-                            self.r_W[l] = self.r_W[l] + dW*dW
-                            self.r_b[l] = self.r_b[l] + db*db
+                            #self.r_W[l] = self.r_W[l] + dW*dW
+                            #self.r_b[l] = self.r_b[l] + db*db
 
                             self.coefs_[l] = update(self.coefs_[l],
                                                     self.alpha/(np.sqrt(self.r_W[l]) + self.epsilon),
@@ -299,12 +301,13 @@ if __name__ == "__main__":
         hidden_layer_sizes=(512, 256, 128, 64),
         activation='relu',
         max_iter=200,
+        alpha=1e-4,
         learning_rate="adaptive",
-        batch_size=200,
+        batch_size=100,
         verbose=True,
     )
 
-    SAVE_PATH = "../weights/self_trained_momentum_4.pkl"
+    SAVE_PATH = "../weights/self_trained_momentum_RMS_prop.pkl"
 
     model.fit(X, labels, save_path=SAVE_PATH)
 
