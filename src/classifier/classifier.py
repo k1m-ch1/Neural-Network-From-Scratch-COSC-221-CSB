@@ -23,6 +23,7 @@ class MLPClassifier:
                  alpha:float=1e-2,
                  learning_rate:str='constant',
                  beta:float=0.9,
+                 epsilon:float=10e-8,
                  verbose:bool=False,
                  ) -> None:
         """
@@ -37,18 +38,22 @@ class MLPClassifier:
             momentum (float): the momentum (using classical momentum).
             learning_rate (str): can either be 'constant' or 'adaptive'. If it's 'adaptive', we will use RMSProp to adust the effective learning rate.
             beta (float): the decay rate for RMSProp.
+            epsilon (float): in order to prevent a division by zero
             verbose (bool): a boolean representing whether we want to display progress to the user
         Return:
             None
         """
         if hidden_layer_sizes == tuple():
             raise ValueError("The hidden layer must exist")
+
         self.hidden_layer_sizes = hidden_layer_sizes
         self.max_iter = max_iter
         self.verbose = verbose
         self.alpha = alpha
         self.batch_size = batch_size
         self.momentum = momentum
+        self.beta = beta
+        self.epsilon = epsilon
 
         if activation not in self.activations:
             raise ValueError(f"The activation function called {activation} doesn't exist")
@@ -183,6 +188,8 @@ class MLPClassifier:
             self.coefs_momentum_ = []
             self.intercepts_= []
             self.intercepts_momentum_ = []
+            self.r_W = []
+            self.r_b = []
             for i in range(len(self.hidden_layer_sizes) + 1):
                 n = int()
                 n_prev = int()
@@ -200,6 +207,8 @@ class MLPClassifier:
                 self.coefs_momentum_.append(np.zeros((n_prev, n)))
                 self.intercepts_.append(np.zeros(n))
                 self.intercepts_momentum_.append(np.zeros(n))
+                self.r_W.append(np.zeros((n_prev, n)))
+                self.r_b.append(np.zeros(n))
 
             L = len(self.hidden_layer_sizes) + 1
             for iter_num in range(self.max_iter):
@@ -229,11 +238,28 @@ class MLPClassifier:
                         # adding momentum
                         self.coefs_momentum_[l] = self.momentum*self.coefs_momentum_[l] + dW
                         self.intercepts_momentum_[l] = self.momentum*self.intercepts_momentum_[l] + db
-                        self.coefs_[l] = update(self.coefs_[l], self.alpha, self.coefs_momentum_[l])
-                        self.intercepts_[l] = update(self.intercepts_[l], self.alpha, self.intercepts_momentum_[l])
+
+                        if self.learning_rate == "adaptive":
+                            #self.r_W[l] = self.beta*self.r_W[l] + (1 - self.beta)*(dW*dW)
+                            #self.r_b[l] = self.beta*self.r_b[l] + (1 - self.beta)*(db*db)
+                            
+                            self.r_W[l] = self.r_W[l] + dW*dW
+                            self.r_b[l] = self.r_b[l] + db*db
+
+                            self.coefs_[l] = update(self.coefs_[l],
+                                                    self.alpha/(np.sqrt(self.r_W[l]) + self.epsilon),
+                                                    self.coefs_momentum_[l])
+
+                            self.intercepts_[l] = update(self.intercepts_[l],
+                                                         self.alpha/(np.sqrt(self.r_b[l]) + self.epsilon),
+                                                         self.intercepts_momentum_[l])
+                        else:
+                            self.coefs_[l] = update(self.coefs_[l], self.alpha, self.coefs_momentum_[l])
+                            self.intercepts_[l] = update(self.intercepts_[l], self.alpha, self.intercepts_momentum_[l])
 
                         if l > 0:
                             delta = (delta @ self.coefs_[l].T) * self.d_activation(z[l])
+
                 if self.verbose:
                     print(f"Finished iteration {iter_num + 1}/{self.max_iter}. Loss: {np.mean(J, axis=0)}")
 
@@ -272,12 +298,13 @@ if __name__ == "__main__":
     model = MLPClassifier(
         hidden_layer_sizes=(512, 256, 128, 64),
         activation='relu',
-        max_iter=2_000,
+        max_iter=200,
+        learning_rate="adaptive",
         batch_size=200,
         verbose=True,
     )
 
-    SAVE_PATH = "../weights/self_trained_momentum_3.pkl"
+    SAVE_PATH = "../weights/self_trained_momentum_4.pkl"
 
     model.fit(X, labels, save_path=SAVE_PATH)
 

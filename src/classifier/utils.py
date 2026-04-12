@@ -112,5 +112,3 @@ if __name__ == "__main__":
     #print(np.sum(s))
     pass
 
-
-

@@ -1112,13 +1112,13 @@ Basically, we want the direction of improvement to retain some memory of its pre
 So we compute the following:
 
 $$
-r_t = r_{t - 1} + (\frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}})^T \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
+r_t = r_{t - 1} + \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}} \odot \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
 $$
 
 then we update as follows:
 
 $$
-W_{ij (t+1)}^{[l]} = W_{ij (t)}^{[l]} - \frac{\alpha}{\sqrt{r_t + \epsilon}} \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
+W_{ij (t+1)}^{[l]} = W_{ij (t)}^{[l]} - \frac{\alpha}{\sqrt{r_t + \epsilon}} \odot \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
 $$
 
 This is called Adagrad.
@@ -1126,7 +1126,7 @@ This is called Adagrad.
 Now if we were to use:
 
 $$
-r_t = \beta r_{t - 1} + (1 - \beta)(\frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}})^T \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
+r_t = \beta r_{t - 1} + (1 - \beta)\frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}} \odot \frac{\partial \mathcal{L}}{\partial W_{ij (t)}^{[l]}}
 $$
 
 which is an exponential moving average (low pass filter), that would be called the RMSProp.
@@ -1154,3 +1154,4 @@ Final update:
 $$
 \theta_{t + 1} = \theta_{t} - \alpha \frac{\hat{m}_t}{\sqrt{\hat{v}_t + \epsilon}}
 $$
+
