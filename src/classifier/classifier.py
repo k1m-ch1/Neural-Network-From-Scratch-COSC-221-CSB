@@ -26,6 +26,7 @@ class MLPClassifier:
                  learning_rate:str='constant',
                  beta:float=0.9,
                  epsilon:float=10e-8,
+                 use_rmsprop:bool=False,
                  verbose:bool=False,
                  ) -> None:
         """
@@ -42,6 +43,7 @@ class MLPClassifier:
             beta (float): the decay rate.
             epsilon (float): in order to prevent a division by zero
             verbose (bool): a boolean representing whether we want to display progress to the user
+            use_rmsprop (bool): use RMSProp rather than adagrad for adaptive learning rate. (default is False)
         Return:
             None
         """
@@ -56,6 +58,7 @@ class MLPClassifier:
         self.momentum = momentum
         self.beta = beta
         self.epsilon = epsilon
+        self.use_rmsprop = use_rmsprop
 
         if activation not in self.activations:
             raise ValueError(f"The activation function called {activation} doesn't exist")
@@ -242,16 +245,15 @@ class MLPClassifier:
                         self.intercepts_momentum_[l] = self.momentum*self.intercepts_momentum_[l] + db
 
                         if self.learning_rate == "adaptive":
-                            self.r_W[l] = self.beta*self.r_W[l] + (1 - self.beta)*(dW*dW)
-                            self.r_b[l] = self.beta*self.r_b[l] + (1 - self.beta)*(db*db)
-                            
-                            #self.r_W[l] = self.r_W[l] + dW*dW
-                            #self.r_b[l] = self.r_b[l] + db*db
-
+                            if self.use_rmsprop:
+                                self.r_W[l] = self.beta*self.r_W[l] + (1 - self.beta)*(dW*dW)
+                                self.r_b[l] = self.beta*self.r_b[l] + (1 - self.beta)*(db*db)
+                            else:
+                                self.r_W[l] = self.r_W[l] + dW*dW
+                                self.r_b[l] = self.r_b[l] + db*db
                             self.coefs_[l] = update(self.coefs_[l],
                                                     self.alpha/(np.sqrt(self.r_W[l]) + self.epsilon),
                                                     self.coefs_momentum_[l])
-
                             self.intercepts_[l] = update(self.intercepts_[l],
                                                          self.alpha/(np.sqrt(self.r_b[l]) + self.epsilon),
                                                          self.intercepts_momentum_[l])
