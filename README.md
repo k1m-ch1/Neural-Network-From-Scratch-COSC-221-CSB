@@ -66,7 +66,65 @@ print("score: ", score)
 model.save(SAVE_PATH)
 ```
 
+Loading the saved model:
 
+
+```python
+with open("weights/sklearn_weights_and_biases.pkl", 'rb') as file:
+    weights_and_biases = pickle.load(file)
+    model.load_weights(weights_and_biases["weights"],
+                       weights_and_biases["biases"],
+                       weights_and_biases["classes"])
+```
+
+# Results
+
+## Digits MNIST
+
+Accuracy: `97.47%`
+
+Code:
+
+```python
+model = cl.MLPClassifier(
+    hidden_layer_sizes=(512, 256, 128),
+    activation="relu",
+    learning_rate="adaptive",
+    max_iter=200,
+    alpha=1e-3,
+    verbose=True
+)
+
+model.fit(X, Y, save_path="./saved_models/digit_classifier.pkl")
+model.score(X_test, Y_test)
+```
+
+## Fashion MNIST
+
+Accuracy: `86.61%`
+
+code: 
+
+```python
+model = cl.MLPClassifier(
+    hidden_layer_sizes=(512, 256, 128),
+    max_iter=1_000,
+    activation="relu",
+    learning_rate="adaptive",
+    alpha=10e-3,
+    verbose=True
+)
+
+X = images.reshape(len(images), -1) / 255
+X_test = test_images.reshape(len(test_images), -1)/255
+
+Y = labels
+Y_test = test_labels
+
+model.fit(X, Y, save_path="./saved_models/mnist_fashion.pkl")
+model.score(X_test, Y_test)
+
+```
 
 # Dataset
 
@@ -125,4 +183,4 @@ For now, we'll use a reference model through `scikit-learn`.
 - [x] back propagation
 - [x] scoring
 - [x] saving
-- [] make the learn rate $\alpha$ more adjustable
+- [x] make the learn rate $\alpha$ more adjustable

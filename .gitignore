@@ -1,6 +1,5 @@
 **/dataset
 **/__pycache__/*
-**/weights
 *.pkl
 **/__marimo__/*
 **/mlpclassifier.egg-info/*
