@@ -160,10 +160,6 @@ So it seems like by convention:
 - currently, it seems like we have 60k training examples and 10k testing examples
 - they do this to see how well the model has generalized
 
-# Reference model
-
-For now, we'll use a reference model through `scikit-learn`. 
-
 # TODO
 
 - [x] debug all the row vector stuff
