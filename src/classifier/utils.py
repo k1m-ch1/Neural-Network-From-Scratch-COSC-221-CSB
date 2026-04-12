@@ -95,6 +95,12 @@ def cross_entropy_loss(y, y_hat):
     y_hat = np.clip(y_hat, epsilon, 1 - epsilon) # in case that y_hat is so small that we run out of precision and it becomes 0
     return - np.sum(y*np.log(y_hat), axis=1)
 
+def update(old_parameters, learning_rate, gradient):
+    """
+    The update function for gradient descent.
+    """
+    return old_parameters - learning_rate*gradient
+
 if __name__ == "__main__":
     #import matplotlib.pyplot as plt
     #x = np.linspace(-5, 5, 100)

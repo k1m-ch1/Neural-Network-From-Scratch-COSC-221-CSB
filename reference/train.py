@@ -1,4 +1,4 @@
-from src.utils import *
+from src.classifier.utils import *
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 import pickle
@@ -17,9 +17,11 @@ if __name__ == "__main__":
     x_test = x_test.reshape(x_test.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(16, 8),
+        hidden_layer_sizes=(128, 64),
         activation='relu',
         solver="sgd",
+        alpha=10e-2,
+        momentum=0.9,
         max_iter=100,
         verbose=True
     )
@@ -34,12 +36,12 @@ if __name__ == "__main__":
     #         bias=model.intercepts_,
     #         allow_pickle=True)
     
-    with open("weights/sklearn_weights_and_biases.pkl", 'wb') as file:
-        pickle.dump(
-            {
-                "weights":model.coefs_,
-                "biases":model.intercepts_,
-                "classes":model.classes_
-            },
-            file
-        )
+    #with open("weights/sklearn_weights_and_biases.pkl", 'wb') as file:
+    #    pickle.dump(
+    #        {
+    #            "weights":model.coefs_,
+    #            "biases":model.intercepts_,
+    #            "classes":model.classes_
+    #        },
+    #        file
+    #    )

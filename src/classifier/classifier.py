@@ -12,17 +12,32 @@ class MLPClassifier:
         "identity":(identity, d_identity)
     }
 
-    def __init__(self, hidden_layer_sizes:tuple[int,...], max_iter:int=20, activation:str='relu', batch_size:int=200, alpha:float=1e-2, verbose:bool=False) -> None:
+    learning_rates = ["constant",
+                     "adaptive"]
+
+    def __init__(self, hidden_layer_sizes:tuple[int,...],
+                 max_iter:int=20,
+                 activation:str='relu',
+                 batch_size:int=200,
+                 momentum:float=0.9,
+                 alpha:float=1e-2,
+                 learning_rate:str='constant',
+                 beta:float=0.9,
+                 verbose:bool=False,
+                 ) -> None:
         """
         We basically are implementing a stripped down version of the scikit learn MLPClassifier class. No solvers, we're only going to use stochastic gradient descent.
 
         Args:
             hidden_layer_sizes (tuple): a tuple representing the size of each hidden layer
             max_iter (int): the number of passes through the whole dataset
+            batch_size (int): the number of batches that will go into the forward prop such that it will be averaged and updated in a single backpropagation step
             activation (string): the activation function, can be relu, sigmoid, tanh, identity
             alpha (float): the learning rate. Default is 1e-10.
+            momentum (float): the momentum (using classical momentum).
+            learning_rate (str): can either be 'constant' or 'adaptive'. If it's 'adaptive', we will use RMSProp to adust the effective learning rate.
+            beta (float): the decay rate for RMSProp.
             verbose (bool): a boolean representing whether we want to display progress to the user
-
         Return:
             None
         """
@@ -33,11 +48,17 @@ class MLPClassifier:
         self.verbose = verbose
         self.alpha = alpha
         self.batch_size = batch_size
+        self.momentum = momentum
 
         if activation not in self.activations:
             raise ValueError(f"The activation function called {activation} doesn't exist")
 
         self.activation, self.d_activation = self.activations[activation]
+
+        if learning_rate not in self.learning_rates:
+            raise ValueError(f"The learning rate called {learning_rate} doesn't exist. Select one from {self.learning_rates}.")
+
+        self.learning_rate = learning_rate
 
     def load_weights(self, coefs, intercepts, classes):
         """
@@ -67,6 +88,12 @@ class MLPClassifier:
         self.coefs_ = copy.deepcopy(coefs)
         self.intercepts_ = copy.deepcopy(intercepts)
         self.classes_ = copy.deepcopy(classes)
+        self.coefs_momentum_ = []
+        self.intercepts_momentum_ = []
+        
+        for i in range(len(self.intercepts_)):
+                self.coefs_momentum_.append(np.zeros(self.coefs_momentum_[i].shape))
+                self.intercepts_momentum_.append(np.zeros(self.intercepts_momentum_[i].shape))
 
     def forward(self, X):
         """
@@ -97,7 +124,6 @@ class MLPClassifier:
 
         except NameError as e:
             raise NameError(f"You can't do forward propagation before acquiring the weights: {e}")
-
 
     def predict_proba(self, X):
         """
@@ -154,7 +180,9 @@ class MLPClassifier:
             Y = y
             self.classes_ = np.unique(Y)
             self.coefs_ = []
+            self.coefs_momentum_ = []
             self.intercepts_= []
+            self.intercepts_momentum_ = []
             for i in range(len(self.hidden_layer_sizes) + 1):
                 n = int()
                 n_prev = int()
@@ -169,7 +197,9 @@ class MLPClassifier:
                     n_prev = self.hidden_layer_sizes[i - 1]
                 # He's initialization sets variance = 2/n^{[l - 1]}
                 self.coefs_.append(np.random.normal(0, np.sqrt(2/n_prev), size=(n_prev, n)))
+                self.coefs_momentum_.append(np.zeros((n_prev, n)))
                 self.intercepts_.append(np.zeros(n))
+                self.intercepts_momentum_.append(np.zeros(n))
 
             L = len(self.hidden_layer_sizes) + 1
             for iter_num in range(self.max_iter):
@@ -193,12 +223,14 @@ class MLPClassifier:
                     # first calculate the batch change in bias
                     delta = a[-1] - y
                     for l in reversed(range(1, L)): # l goes from L - 1 to 0
-                        # make db the average already
-                        db = np.mean(delta, axis=0)
                         dW = (a[l].T @ delta)/m
+                        db = np.mean(delta, axis=0)
 
-                        self.coefs_[l] -= self.alpha*dW
-                        self.intercepts_[l] -= self.alpha*db
+                        # adding momentum
+                        self.coefs_momentum_[l] = self.momentum*self.coefs_momentum_[l] + dW
+                        self.intercepts_momentum_[l] = self.momentum*self.intercepts_momentum_[l] + db
+                        self.coefs_[l] = update(self.coefs_[l], self.alpha, self.coefs_momentum_[l])
+                        self.intercepts_[l] = update(self.intercepts_[l], self.alpha, self.intercepts_momentum_[l])
 
                         if l > 0:
                             delta = (delta @ self.coefs_[l].T) * self.d_activation(z[l])
@@ -227,25 +259,25 @@ class MLPClassifier:
 
 
 if __name__ == "__main__":
-    images = get_images_fast("dataset/train-images.idx3-ubyte")
-    labels = get_labels_fast("dataset/train-labels.idx1-ubyte")
+    images = get_images_fast("../dataset/train-images.idx3-ubyte")
+    labels = get_labels_fast("../dataset/train-labels.idx1-ubyte")
     import matplotlib.pyplot as plt
-    test_images = get_images_fast("dataset/t10k-images.idx3-ubyte")
-    test_labels = get_labels_fast("dataset/t10k-labels.idx1-ubyte")
+    test_images = get_images_fast("../dataset/t10k-images.idx3-ubyte")
+    test_labels = get_labels_fast("../dataset/t10k-labels.idx1-ubyte")
 
     X = images.reshape(images.shape[0], -1)/255
 
     X_test = test_images.reshape(test_images.shape[0], -1)/255
 
     model = MLPClassifier(
-        hidden_layer_sizes=(128, 64),
+        hidden_layer_sizes=(512, 256, 128, 64),
         activation='relu',
-        max_iter=1000,
+        max_iter=2_000,
         batch_size=200,
         verbose=True,
     )
 
-    SAVE_PATH = "weights/self_trained_2.pkl"
+    SAVE_PATH = "../weights/self_trained_momentum_3.pkl"
 
     model.fit(X, labels, save_path=SAVE_PATH)
 
