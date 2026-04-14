@@ -1,6 +1,6 @@
 [project]
 name = "mlpclassifier"
-version = "0.1.3"
+version = "0.1.4"
 description = "An implementation of an MLP classifier (with an interface of that of scikit-learn's MLPClassifier class."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -102,8 +102,8 @@ class MLPClassifier:
         self.intercepts_momentum_ = []
         
         for i in range(len(self.intercepts_)):
-                self.coefs_momentum_.append(np.zeros(self.coefs_momentum_[i].shape))
-                self.intercepts_momentum_.append(np.zeros(self.intercepts_momentum_[i].shape))
+            self.coefs_momentum_.append(np.zeros(self.coefs_[i].shape))
+            self.intercepts_momentum_.append(np.zeros(self.intercepts_[i].shape))
 
     def forward(self, X):
         """
