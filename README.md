@@ -9,8 +9,6 @@ Documentation and derivation:
 
 - [Multi-Layered perceptron derivation from scratch](https://github.com/k1m-ch1/Neural-Network-From-Scratch-COSC-221-CSB/blob/main/docs/neural_networks.pdf)
 
-Neural Network to classify handwritten digits (a rite of passage project at this point lol).
-
 We will try to re-implement a stripped down version of the `MLPClassifier` class from `scikit-learn` from first principles. With this, we can then train a general classifier using the Multi-Layered Perceptron model.
 
 # To run
