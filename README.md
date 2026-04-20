@@ -1,5 +1,12 @@
 # Neural-Network-From-Scratch-COSC-221-CSB
 
+![](./assets/csb_teammember.jpg)
+
+Group Members:
+
+- Luy Kimchour (ID: 2025136): did back propagation
+- Sok Kimleng (ID: 2025224): did forward propagation
+
 Links:
 
 - [github link](https://github.com/k1m-ch1/Neural-Network-From-Scratch-COSC-221-CSB)
@@ -11,7 +18,8 @@ Documentation and derivation:
 
 We will try to re-implement a stripped down version of the `MLPClassifier` class from `scikit-learn` from first principles. With this, we can then train a general classifier using the Multi-Layered Perceptron model.
 
-# To run
+
+# Usage
 
 So since we've re-implemented an MLP using `scikit-learn`'s `MLPClassifier` as a template, the API should be familiar.
 
@@ -178,3 +186,40 @@ So it seems like by convention:
 - [x] scoring
 - [x] saving
 - [x] make the learn rate $\alpha$ more adjustable
+
+# Problem
+
+An Multi-Layered Perceptron(MLP) can be used to classify inputs. It's the simplest deep neural network, but, it's outdated.
+
+# Requirements
+
+Since we're implementing an MLP from scratch, we only need `numpy` and optionally, `matplotlib` to display images.
+
+# System design
+
+The interface is a clone of `scikit-learn`'s `MLPClassifier` since it's familiar. We simply fill in the blackbox by implementing it ourselves using `numpy`.
+
+# Benefits
+
+There are no practical purposes to this program.
+
+# Algorithms
+
+- Forward propagation
+- Backward propagation
+- Update algorithms such as:
+  - Classical momentum
+  - Adagrad
+  - RMSProp
+
+# Improvements
+
+- implement the `adam` solver for back propagation
+- for the task of classifying digits of the MNIST dataset, it's better to use a Convolutional Neural Network (CNN)
+
+# AI usage
+
+- AI was used to verify the mathematics
+- AI was used to inquire about technical details
+
+
