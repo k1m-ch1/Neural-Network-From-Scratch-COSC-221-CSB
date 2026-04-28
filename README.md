@@ -15,6 +15,7 @@ Links:
 Documentation and derivation:
 
 - [Multi-Layered perceptron derivation from scratch](https://github.com/k1m-ch1/Neural-Network-From-Scratch-COSC-221-CSB/blob/main/docs/neural_networks.pdf)
+- [video derivation](https://www.youtube.com/watch?v=9utpdRnF2lg)
 
 We will try to re-implement a stripped down version of the `MLPClassifier` class from `scikit-learn` from first principles. With this, we can then train a general classifier using the Multi-Layered Perceptron model.
 
